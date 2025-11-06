@@ -1,5 +1,6 @@
 const jwt = require('jsonwebtoken');
 const { Pengguna } = require('../models');
+const Env = require('../config/env');
 
 const authMiddleware = async (req, res, next) => {
   try {
@@ -9,7 +10,7 @@ const authMiddleware = async (req, res, next) => {
       return res.status(401).json({ message: 'Akses ditolak, token tidak ada.' });
     }
 
-    const decoded = jwt.verify(token, process.env.JWT_SECRET);
+    const decoded = jwt.verify(token, Env.JWT_SECRET);
     const user = await Pengguna.findByPk(decoded.user_id);
 
     if (!user) {

@@ -3,9 +3,10 @@ const express = require('express');
 const cors = require('cors');
 const routes = require('./routes');
 const { db } = require('./models');
+const Env = require('./config/env');
 
 const app = express();
-const PORT = process.env.PORT || 3000;
+const PORT = Env.PORT;
 
 // Middleware
 app.use(cors());
