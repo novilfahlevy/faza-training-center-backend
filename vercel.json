@@ -1,3 +1,7 @@
 {
-  "includeFiles": "node_modules/mysql2/**"
+  "functions": {
+    "index.js": {
+      "includeFiles": "node_modules/mysql2/**"
+    }
+  }
 }
