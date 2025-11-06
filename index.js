@@ -21,8 +21,11 @@ app.get('/', (req, res) => {
 app.use('/api/v1', routes);
 
 // Koneksi ke database dan start server
+db.authenticate()
+  .then(() => console.log('✅ Database berhasil terkoneksi dan tabel siap.'))
+  .catch(err => console.error('❌ Unable to connect:', err));
+
 db.sync().then(() => {
-  console.log('Database berhasil terkoneksi dan tabel siap.');
   app.listen(PORT, () => {
     console.log(`Server berjalan di http://localhost:${PORT}`);
   });
