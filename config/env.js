@@ -1,5 +1,4 @@
 require('dotenv').config();
-const fs = require('fs');
 
 class Env {
   static get(key, defaultValue = null) {

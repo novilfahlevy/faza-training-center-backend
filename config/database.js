@@ -1,7 +1,6 @@
 const { Sequelize } = require('sequelize');
 const fs = require('fs');
 const Env = require('./env');
-require('dotenv').config();
 
 const config = {
   host: Env.DB_HOST,

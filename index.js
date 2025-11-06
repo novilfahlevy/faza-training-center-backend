@@ -1,10 +1,8 @@
-// vercel-disable-edge
-require('dotenv').config();
 const express = require('express');
 const cors = require('cors');
-const routes = require('../routes');
-const { db } = require('../models');
-const Env = require('../config/env');
+const routes = require('./routes');
+const { db } = require('./models');
+const Env = require('./config/env');
 
 const app = express();
 const PORT = Env.PORT || 3000;
@@ -33,12 +31,6 @@ app.use('/api/v1', routes);
   }
 })();
 
-// Ekspor app untuk Vercel
-module.exports = app;
-
-// Jalankan server hanya saat lokal (bukan di Vercel)
-if (require.main === module) {
-  app.listen(PORT, () => {
-    console.log(`🚀 Server berjalan di http://localhost:${PORT}`);
-  });
-}
+app.listen(PORT, () => {
+  console.log(`🚀 Server berjalan di http://localhost:${PORT}`);
+});
