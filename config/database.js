@@ -10,7 +10,9 @@ const config = {
   logging: false
 };
 
-const caCert = fs.readFileSync(Env.DB_SSL_CA);
+const caCert = Env.DB_SSL_CA
+  ? Buffer.from(Env.DB_SSL_CA, 'base64').toString('utf-8')
+  : fs.readFileSync(Env.DB_SSL_CA_PATH, 'utf8');
 
 if (caCert) {
   config.dialectOptions = {

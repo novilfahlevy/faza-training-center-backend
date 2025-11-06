@@ -35,6 +35,10 @@ class Env {
     return this.get('DB_PASSWORD');
   }
 
+  static get DB_SSL_CA_PATH() {
+    return this.get('DB_SSL_CA_PATH');
+  }
+
   static get DB_SSL_CA() {
     return this.get('DB_SSL_CA');
   }
