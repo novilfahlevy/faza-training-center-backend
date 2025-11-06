@@ -1,5 +1,6 @@
 const { Sequelize } = require('sequelize');
 const fs = require('fs');
+const mysql2 = require('mysql2');
 const Env = require('./env');
 require('dotenv').config();
 
@@ -7,6 +8,7 @@ const config = {
   host: Env.DB_HOST,
   port: Env.DB_PORT || 3360,
   dialect: 'mysql',
+  dialectModule: mysql2,
   logging: false
 };
 
