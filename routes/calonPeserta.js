@@ -6,11 +6,11 @@ const pesertaPelatihanController = require('../controllers/pesertaPelatihanContr
 const { authMiddleware, adminMiddleware } = require('../middleware/authMiddleware');
 
 // --- Endpoint CRUD Calon Peserta (tetap sama) ---
-router.post('/', authMiddleware, adminMiddleware, calonPesertaController.createCalonPeserta);
-router.get('/', authMiddleware, adminMiddleware, calonPesertaController.getAllCalonPeserta);
-router.get('/:id', authMiddleware, calonPesertaController.getCalonPesertaById);
-router.put('/:id', authMiddleware, calonPesertaController.updateCalonPeserta);
-router.delete('/:id', authMiddleware, adminMiddleware, calonPesertaController.deleteCalonPeserta);
+router.post('/', calonPesertaController.createCalonPeserta);
+router.get('/', calonPesertaController.getAllCalonPeserta);
+router.get('/:id', calonPesertaController.getCalonPesertaById);
+router.put('/:id', calonPesertaController.updateCalonPeserta);
+router.delete('/:id', calonPesertaController.deleteCalonPeserta);
 
 // --- Endpoint Baru untuk Riwayat Pendaftaran ---
 router.get('/registrasi-saya', authMiddleware, pesertaPelatihanController.getUserRegistrations);
