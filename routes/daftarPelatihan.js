@@ -13,8 +13,8 @@ router.put('/:id', daftarPelatihanController.updatePelatihan);
 router.delete('/:id', daftarPelatihanController.deletePelatihan);
 
 // --- Endpoint Baru untuk Manajemen Pendaftaran ---
-router.post('/:pelatihanId/register', authMiddleware, pesertaPelatihanController.registerForTraining);
-router.delete('/:pelatihanId/register', authMiddleware, pesertaPelatihanController.cancelRegistration);
-router.get('/:pelatihanId/peserta', authMiddleware, adminMiddleware, pesertaPelatihanController.getTrainingParticipants);
+router.post('/:pelatihanId/register', pesertaPelatihanController.registerForTraining);
+router.delete('/:pelatihanId/register', pesertaPelatihanController.cancelRegistration);
+router.get('/:pelatihanId/peserta', pesertaPelatihanController.getTrainingParticipants);
 
 module.exports = router;

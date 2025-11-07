@@ -24,7 +24,4 @@ const LaporanKegiatan = db.define('laporan_kegiatan', {
   timestamps: false,
 });
 
-Pengguna.hasMany(LaporanKegiatan, { foreignKey: 'user_uploader_id' });
-LaporanKegiatan.belongsTo(Pengguna, { foreignKey: 'user_uploader_id', as: 'uploader' });
-
 module.exports = LaporanKegiatan;

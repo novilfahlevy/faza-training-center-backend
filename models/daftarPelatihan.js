@@ -26,7 +26,4 @@ const DaftarPelatihan = db.define('daftar_pelatihan', {
   timestamps: false,
 });
 
-Mitra.hasMany(DaftarPelatihan, { foreignKey: 'mitra_id' });
-DaftarPelatihan.belongsTo(Mitra, { foreignKey: 'mitra_id', as: 'mitra' });
-
 module.exports = DaftarPelatihan;

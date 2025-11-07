@@ -27,7 +27,4 @@ const Mitra = db.define('mitra', {
   timestamps: false,
 });
 
-Pengguna.hasOne(Mitra, { foreignKey: 'user_id' });
-Mitra.belongsTo(Pengguna, { foreignKey: 'user_id' });
-
 module.exports = Mitra;

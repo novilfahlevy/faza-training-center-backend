@@ -33,7 +33,7 @@ exports.getAllMitra = async (req, res) => {
       where: condition,
       limit,
       offset,
-      include: [{ model: Pengguna, attributes: ['user_id', 'email'] }],
+      include: [{ model: Pengguna, as: 'pengguna', attributes: ['user_id', 'email'] }],
     });
 
     const response = getPagingData(data, page, limit);

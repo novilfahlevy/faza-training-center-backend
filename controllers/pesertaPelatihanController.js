@@ -1,4 +1,15 @@
-const { CalonPeserta, DaftarPelatihan, PesertaPelatihan } = require('../models');
+const { DataTypes, Op } = require('sequelize');
+const { CalonPeserta, DaftarPelatihan, PesertaPelatihan, Pengguna } = require('../models');
+const { getPagingData, getPagination } = require('../utils/pagination');
+
+const createSearchCondition = (query, modelAttributes) => {
+  if (!query) return null;
+  const searchConditions = Object.keys(modelAttributes)
+    .filter(key => modelAttributes[key].type instanceof DataTypes.STRING || modelAttributes[key].type instanceof DataTypes.TEXT)
+    .map(key => ({ [key]: { [Op.like]: `%${query}%` } }));
+  
+  return { [Op.or]: searchConditions };
+};
 
 // Calon peserta mendaftar ke pelatihan
 exports.registerForTraining = async (req, res) => {
@@ -70,22 +81,59 @@ exports.cancelRegistration = async (req, res) => {
 exports.getTrainingParticipants = async (req, res) => {
   try {
     const { pelatihanId } = req.params;
+    const { page, size, search } = req.query;
+    const { limit, offset } = getPagination(page, size);
 
-    const pelatihan = await DaftarPelatihan.findByPk(pelatihanId, {
-      include: [{
-        model: CalonPeserta,
-        as: 'peserta_terdaftar',
-        include: [{ model: require('./pengguna'), attributes: ['email'] }]
-      }]
-    });
-
+    // Pastikan pelatihan valid
+    const pelatihan = await DaftarPelatihan.findByPk(pelatihanId);
     if (!pelatihan) {
       return res.status(404).json({ message: 'Pelatihan tidak ditemukan.' });
     }
 
-    res.json(pelatihan.peserta_terdaftar);
+    // 🔍 Gabungkan pencarian di nama_lengkap, no_telp, dan email
+    const searchCondition = search
+      ? {
+          [Op.or]: [
+            { '$peserta.nama_lengkap$': { [Op.like]: `%${search}%` } },
+            { '$peserta.no_telp$': { [Op.like]: `%${search}%` } },
+            { '$peserta.pengguna.email$': { [Op.like]: `%${search}%` } },
+          ],
+        }
+      : {};
+
+    // Query peserta
+    const { count, rows } = await PesertaPelatihan.findAndCountAll({
+      where: {
+        pelatihan_id: pelatihanId,
+        ...searchCondition, // filter lintas relasi
+      },
+      include: [
+        {
+          model: CalonPeserta,
+          as: 'peserta',
+          attributes: ['nama_lengkap', 'no_telp'],
+          include: [
+            {
+              model: Pengguna,
+              as: 'pengguna',
+              attributes: ['email'],
+            },
+          ],
+        },
+      ],
+      limit,
+      offset,
+      distinct: true,
+    });
+
+    const data = getPagingData({ count, rows }, page, limit);
+    res.json(data);
   } catch (error) {
-    res.status(500).json({ message: 'Gagal mengambil data peserta', error: error.message });
+    console.error(error);
+    res.status(500).json({
+      message: 'Gagal mengambil data peserta',
+      error: error.message,
+    });
   }
 };
 

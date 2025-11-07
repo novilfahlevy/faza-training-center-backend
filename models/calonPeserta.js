@@ -30,24 +30,4 @@ const CalonPeserta = db.define('calon_peserta', {
   timestamps: false,
 });
 
-Pengguna.hasOne(CalonPeserta, { foreignKey: 'user_id' });
-CalonPeserta.belongsTo(Pengguna, { foreignKey: 'user_id' });
-
-const DaftarPelatihan = require('./daftarPelatihan');
-
-// Definisikan relasi many-to-many
-CalonPeserta.belongsToMany(DaftarPelatihan, {
-  through: 'peserta_pelatihan',
-  foreignKey: 'peserta_id',
-  otherKey: 'pelatihan_id',
-  as: 'pelatihan_diikuti', // Alias untuk relasi ini
-});
-
-DaftarPelatihan.belongsToMany(CalonPeserta, {
-  through: 'peserta_pelatihan',
-  foreignKey: 'pelatihan_id',
-  otherKey: 'peserta_id',
-  as: 'peserta_terdaftar', // Alias untuk relasi ini
-});
-
 module.exports = CalonPeserta;
