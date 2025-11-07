@@ -118,15 +118,60 @@ exports.getPenggunaById = async (req, res) => {
   }
 };
 
-// UPDATE
+// UPDATE MITRA
 exports.updatePengguna = async (req, res) => {
   try {
     const { id } = req.params;
-    const [updated] = await Pengguna.update(req.body, { where: { user_id: id } });
-    if (!updated) return res.status(404).json({ message: 'Pengguna tidak ditemukan' });
-    res.json({ message: 'Pengguna berhasil diperbarui' });
+    const { email, role, mitra } = req.body;
+
+    // 🔹 Update data pengguna
+    const pengguna = await Pengguna.findByPk(id);
+    if (!pengguna) {
+      return res.status(404).json({ message: "Pengguna tidak ditemukan" });
+    }
+
+    await pengguna.update({ email, role });
+
+    // 🔹 Jika pengguna adalah mitra, update juga tabel Mitra
+    if (role === "mitra" && mitra) {
+      const existingMitra = await Mitra.findOne({ where: { user_id: id } });
+
+      if (existingMitra) {
+        await existingMitra.update({
+          nama_mitra: mitra.nama_mitra,
+          deskripsi_mitra: mitra.deskripsi_mitra,
+          alamat_mitra: mitra.alamat_mitra,
+          telepon_mitra: mitra.telepon_mitra,
+          email_mitra: mitra.email_mitra,
+          website_mitra: mitra.website_mitra,
+        });
+      } else {
+        await Mitra.create({
+          user_id: id,
+          ...mitra,
+        });
+      }
+    }
+
+    // 🔹 Ambil ulang data pengguna setelah update
+    const updatedData = await Pengguna.findByPk(id, {
+      include: [
+        { model: Mitra, as: "mitra" },
+        { model: CalonPeserta, as: "calon_peserta" },
+      ],
+      attributes: { exclude: ["password_hash"] },
+    });
+
+    res.json({
+      message: "✅ Data pengguna berhasil diperbarui",
+      data: updatedData,
+    });
   } catch (error) {
-    res.status(500).json({ message: 'Gagal memperbarui pengguna', error: error.message });
+    console.error("❌ Gagal memperbarui data pengguna:", error);
+    res.status(500).json({
+      message: "Gagal memperbarui data pengguna",
+      error: error.message,
+    });
   }
 };
 
