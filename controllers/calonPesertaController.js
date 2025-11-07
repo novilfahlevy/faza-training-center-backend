@@ -1,15 +1,7 @@
 const { CalonPeserta, Pengguna } = require('../models');
 const { getPagination, getPagingData } = require('../utils/pagination');
 const { Op, DataTypes } = require("sequelize");
-
-const createSearchCondition = (query, modelAttributes) => {
-  if (!query) return null;
-  const searchConditions = Object.keys(modelAttributes)
-    .filter(key => modelAttributes[key].type instanceof DataTypes.STRING || modelAttributes[key].type instanceof DataTypes.TEXT)
-    .map(key => ({ [key]: { [Op.like]: `%${query}%` } }));
-  
-  return { [Op.or]: searchConditions };
-};
+const createSearchCondition = require('../utils/searchConditions');
 
 // CREATE
 exports.createCalonPeserta = async (req, res) => {

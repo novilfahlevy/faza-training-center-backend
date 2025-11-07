@@ -3,16 +3,7 @@ const jwt = require('jsonwebtoken');
 const { Pengguna } = require('../models');
 const { getPagination, getPagingData } = require('../utils/pagination');
 const { Op, DataTypes } = require("sequelize");
-
-// Helper untuk membuat kondisi pencarian
-const createSearchCondition = (query, modelAttributes) => {
-  if (!query) return null;
-  const searchConditions = Object.keys(modelAttributes)
-    .filter(key => modelAttributes[key].type instanceof DataTypes.STRING || modelAttributes[key].type instanceof DataTypes.TEXT)
-    .map(key => ({ [key]: { [Op.like]: `%${query}%` } }));
-  
-  return { [Op.or]: searchConditions };
-};
+const createSearchCondition = require('../utils/searchConditions');
 
 // CREATE
 exports.createPengguna = async (req, res) => {

@@ -1,7 +1,5 @@
-// models/index.js
 const db = require('../config/database');
 
-// Import semua model
 const Pengguna = require('./pengguna');
 const CalonPeserta = require('./calonPeserta');
 const Mitra = require('./mitra');

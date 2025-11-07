@@ -1,15 +1,7 @@
 const { DataTypes, Op } = require('sequelize');
 const { CalonPeserta, DaftarPelatihan, PesertaPelatihan, Pengguna } = require('../models');
 const { getPagingData, getPagination } = require('../utils/pagination');
-
-const createSearchCondition = (query, modelAttributes) => {
-  if (!query) return null;
-  const searchConditions = Object.keys(modelAttributes)
-    .filter(key => modelAttributes[key].type instanceof DataTypes.STRING || modelAttributes[key].type instanceof DataTypes.TEXT)
-    .map(key => ({ [key]: { [Op.like]: `%${query}%` } }));
-  
-  return { [Op.or]: searchConditions };
-};
+const createSearchCondition = require('../utils/searchConditions');
 
 // Calon peserta mendaftar ke pelatihan
 exports.registerForTraining = async (req, res) => {
