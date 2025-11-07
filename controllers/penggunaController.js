@@ -1,9 +1,7 @@
 const bcrypt = require('bcryptjs');
-const jwt = require('jsonwebtoken');
-const { Pengguna } = require('../models');
+const { Pengguna, CalonPeserta, Mitra } = require('../models');
 const { getPagination, getPagingData } = require('../utils/pagination');
-const { Op, DataTypes } = require("sequelize");
-const createSearchCondition = require('../utils/searchConditions');
+const { Op } = require("sequelize");
 
 // CREATE
 exports.createPengguna = async (req, res) => {
@@ -17,25 +15,59 @@ exports.createPengguna = async (req, res) => {
   }
 };
 
-// READ (All dengan pagination dan search)
+// READ (All dengan pagination dan search by email/role)
+// 🔍 Fungsi untuk mengambil semua pengguna (dengan pencarian lintas relasi)
 exports.getAllPengguna = async (req, res) => {
   try {
-    const { page, size, search } = req.query;
+    const { page = 0, size = 10, search = "" } = req.query;
     const { limit, offset } = getPagination(page, size);
-    
-    const condition = createSearchCondition(search, Pengguna.rawAttributes);
 
+    // 🔸 Kondisi pencarian
+    let condition = {};
+    if (search) {
+      condition = {
+        [Op.or]: [
+          { email: { [Op.like]: `%${search}%` } },
+          { role: { [Op.like]: `%${search}%` } },
+        ],
+      };
+    }
+
+    // 🔸 Query ke database
     const data = await Pengguna.findAndCountAll({
       where: condition,
+      include: [
+        {
+          model: CalonPeserta,
+          as: 'calon_peserta',
+          where: search
+            ? { nama_lengkap: { [Op.like]: `%${search}%` } }
+            : undefined,
+          required: false,
+        },
+        {
+          model: Mitra,
+          as: 'mitra',
+          where: search
+            ? { nama_mitra: { [Op.like]: `%${search}%` } }
+            : undefined,
+          required: false,
+        },
+      ],
       limit,
       offset,
+      distinct: true,
       attributes: { exclude: ['password_hash'] },
+      order: [['user_id', 'DESC']],
     });
 
     const response = getPagingData(data, page, limit);
     res.json(response);
   } catch (error) {
-    res.status(500).json({ message: 'Gagal mengambil data pengguna', error: error.message });
+    res.status(500).json({
+      message: 'Gagal mengambil data pengguna',
+      error: error.message,
+    });
   }
 };
 
