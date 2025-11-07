@@ -8,27 +8,74 @@ exports.createPengguna = async (req, res) => {
   try {
     const { email, password, role } = req.body;
     const hashedPassword = await bcrypt.hash(password, 10);
-    const newPengguna = await Pengguna.create({ email, password_hash: hashedPassword, role });
-    res.status(201).json({ message: 'Pengguna berhasil dibuat', data: newPengguna });
+
+    // 🔹 Buat pengguna baru
+    const newPengguna = await Pengguna.create({
+      email,
+      password_hash: hashedPassword,
+      role,
+    });
+
+    // 🔹 Jika role adalah "mitra", buat juga data mitra
+    if (role === "mitra") {
+      const {
+        nama_mitra,
+        email_mitra,
+        deskripsi_mitra,
+        alamat_mitra,
+        telepon_mitra,
+        website_mitra,
+      } = req.body;
+
+      const newMitra = await Mitra.create({
+        user_id: newPengguna.user_id,
+        nama_mitra,
+        email_mitra,
+        deskripsi_mitra,
+        alamat_mitra,
+        telepon_mitra,
+        website_mitra,
+      });
+
+      return res.status(201).json({
+        message: "Pengguna dan data Mitra berhasil dibuat",
+        data: {
+          pengguna: newPengguna,
+          mitra: newMitra,
+        },
+      });
+    }
+
+    // 🔹 Jika bukan mitra, cukup kirim data pengguna
+    res.status(201).json({
+      message: "Pengguna berhasil dibuat",
+      data: newPengguna,
+    });
   } catch (error) {
-    res.status(500).json({ message: 'Gagal membuat pengguna', error: error.message });
+    console.error("❌ Gagal membuat pengguna:", error);
+    res.status(500).json({
+      message: "Gagal membuat pengguna",
+      error: error.message,
+    });
   }
 };
 
-// READ (All dengan pagination dan search by email/role)
-// 🔍 Fungsi untuk mengambil semua pengguna (dengan pencarian lintas relasi)
+// READ (All dengan pagination dan search by email/role/relasi)
 exports.getAllPengguna = async (req, res) => {
   try {
     const { page = 0, size = 10, search = "" } = req.query;
     const { limit, offset } = getPagination(page, size);
 
-    // 🔸 Kondisi pencarian
+    // 🔍 Kondisi pencarian lintas kolom & relasi
     let condition = {};
     if (search) {
       condition = {
         [Op.or]: [
           { email: { [Op.like]: `%${search}%` } },
           { role: { [Op.like]: `%${search}%` } },
+          { "$calon_peserta.nama_lengkap$": { [Op.like]: `%${search}%` } },
+          { "$mitra.nama_mitra$": { [Op.like]: `%${search}%` } },
+          { "$mitra.email_mitra$": { [Op.like]: `%${search}%` } },
         ],
       };
     }
@@ -37,35 +84,22 @@ exports.getAllPengguna = async (req, res) => {
     const data = await Pengguna.findAndCountAll({
       where: condition,
       include: [
-        {
-          model: CalonPeserta,
-          as: 'calon_peserta',
-          where: search
-            ? { nama_lengkap: { [Op.like]: `%${search}%` } }
-            : undefined,
-          required: false,
-        },
-        {
-          model: Mitra,
-          as: 'mitra',
-          where: search
-            ? { nama_mitra: { [Op.like]: `%${search}%` } }
-            : undefined,
-          required: false,
-        },
+        { model: CalonPeserta, as: "calon_peserta", required: false },
+        { model: Mitra, as: "mitra", required: false },
       ],
       limit,
       offset,
       distinct: true,
-      attributes: { exclude: ['password_hash'] },
-      order: [['user_id', 'DESC']],
+      attributes: { exclude: ["password_hash"] },
+      order: [["user_id", "DESC"]],
     });
 
     const response = getPagingData(data, page, limit);
     res.json(response);
   } catch (error) {
+    console.error("❌ Gagal mengambil data pengguna:", error);
     res.status(500).json({
-      message: 'Gagal mengambil data pengguna',
+      message: "Gagal mengambil data pengguna",
       error: error.message,
     });
   }
