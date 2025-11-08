@@ -1,6 +1,5 @@
 const { DaftarPelatihan } = require('../models');
 const { getPagination, getPagingData } = require('../utils/pagination');
-const { Op, DataTypes } = require("sequelize");
 const createSearchCondition = require('../utils/searchConditions');
 
 // CREATE

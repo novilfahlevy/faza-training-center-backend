@@ -1,3 +1,5 @@
+const { DataTypes, Op } = require("sequelize");
+
 const createSearchCondition = (query, modelAttributes) => {
   if (!query) return null;
   const searchConditions = Object.keys(modelAttributes)
