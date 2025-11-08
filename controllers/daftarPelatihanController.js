@@ -51,13 +51,32 @@ exports.getPelatihanById = async (req, res) => {
 exports.updatePelatihan = async (req, res) => {
   try {
     const { id } = req.params;
-    const [updated] = await DaftarPelatihan.update(req.body, { where: { pelatihan_id: id } });
-    if (!updated) return res.status(404).json({ message: 'Pelatihan tidak ditemukan' });
-    res.json({ message: 'Pelatihan berhasil diperbarui' });
+
+    // Jalankan update
+    const [updated] = await DaftarPelatihan.update(req.body, {
+      where: { pelatihan_id: Number(id) },
+    });
+
+    if (updated === 0) {
+      const existing = await DaftarPelatihan.findByPk(id);
+
+      if (!existing) {
+        return res.status(404).json({ message: 'Pelatihan tidak ditemukan' });
+      }
+
+      return res.status(200).json({ message: 'Pelatihan berhasil diperbarui' });
+    }
+
+    res.status(200).json({ message: 'Pelatihan berhasil diperbarui' });
   } catch (error) {
-    res.status(500).json({ message: 'Gagal memperbarui pelatihan', error: error.message });
+    console.error('❌ Error update pelatihan:', error);
+    res.status(500).json({
+      message: 'Gagal memperbarui pelatihan',
+      error: error.message,
+    });
   }
 };
+
 
 // DELETE
 exports.deletePelatihan = async (req, res) => {
