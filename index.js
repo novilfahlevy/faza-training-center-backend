@@ -3,6 +3,7 @@ const cors = require('cors');
 const routes = require('./routes');
 const { db } = require('./models');
 const Env = require('./config/env');
+const path = require('path');
 
 const app = express();
 const PORT = Env.PORT || 3000;
@@ -11,6 +12,9 @@ const PORT = Env.PORT || 3000;
 app.use(cors());
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
+
+// Serve file statis
+app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
 
 // Route utama
 app.get('/', (req, res) => {

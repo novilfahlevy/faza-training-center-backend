@@ -9,6 +9,7 @@ const DaftarPelatihan = db.define('daftar_pelatihan', {
     autoIncrement: true,
   },
   nama_pelatihan: { type: DataTypes.STRING },
+  thumbnail_url: { type: DataTypes.STRING },
   deskripsi_pelatihan: { type: DataTypes.TEXT },
   tanggal_pelatihan: { type: DataTypes.DATE },
   durasi_pelatihan: { type: DataTypes.STRING },

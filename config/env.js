@@ -10,6 +10,10 @@ class Env {
     return this.get('NODE_ENV', 'development');
   }
 
+  static get APP_URL() {
+    return this.get('APP_URL', `http://localhost:${Env.PORT || 3000}`);
+  }
+
   static get PORT() {
     return parseInt(this.get('PORT', '3000'), 10);
   }

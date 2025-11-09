@@ -17,4 +17,7 @@ router.post('/:pelatihanId/register', pesertaPelatihanController.registerForTrai
 router.delete('/:pelatihanId/register', pesertaPelatihanController.cancelRegistration);
 router.get('/:pelatihanId/peserta', pesertaPelatihanController.getTrainingParticipants);
 
+// Route upload thumbnail
+router.post('/upload-thumbnail', daftarPelatihanController.uploadThumbnail);
+
 module.exports = router;

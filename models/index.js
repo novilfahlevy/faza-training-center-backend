@@ -6,6 +6,7 @@ const Mitra = require('./mitra');
 const DaftarPelatihan = require('./daftarPelatihan');
 const LaporanKegiatan = require('./laporanKegiatan');
 const PesertaPelatihan = require('./pesertaPelatihan');
+const ThumbnailTemporary = require('./thumbnailTemporary');
 
 /* =========================
  *  RELASI ANTAR MODEL
@@ -59,4 +60,5 @@ module.exports = {
   DaftarPelatihan,
   LaporanKegiatan,
   PesertaPelatihan,
+  ThumbnailTemporary,
 };
