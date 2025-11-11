@@ -2,7 +2,7 @@ const { DataTypes } = require('sequelize');
 const db = require('../config/database');
 
 const Pengguna = db.define('pengguna', {
-  user_id: {
+  pengguna_id: {
     type: DataTypes.INTEGER,
     primaryKey: true,
     autoIncrement: true,
@@ -17,7 +17,7 @@ const Pengguna = db.define('pengguna', {
     allowNull: false,
   },
   role: {
-    type: DataTypes.ENUM('calon_peserta', 'admin', 'mitra'),
+    type: DataTypes.ENUM('admin', 'mitra', 'peserta'), // 🔹 Enum diperbarui
     allowNull: false,
   },
 }, {

@@ -1,4 +1,4 @@
-const { LaporanKegiatan, Pengguna } = require('../models');
+const { LaporanKegiatan, Pengguna } = require('../models'); // 🔹 Impor tetap
 const { getPagination, getPagingData } = require('../utils/pagination');
 const { Op, DataTypes } = require("sequelize");
 const createSearchCondition = require('../utils/searchConditions');
@@ -6,8 +6,8 @@ const createSearchCondition = require('../utils/searchConditions');
 // CREATE
 exports.createLaporan = async (req, res) => {
   try {
-    // Ambil user_id dari user yang sedang login
-    const laporanData = { ...req.body, user_uploader_id: req.user.user_id };
+    // 🔹 Gunakan pengguna_id baru
+    const laporanData = { ...req.body, pengguna_id: req.user.pengguna_id };
     const newLaporan = await LaporanKegiatan.create(laporanData);
     res.status(201).json({ message: 'Laporan berhasil dibuat', data: newLaporan });
   } catch (error) {
@@ -23,17 +23,16 @@ exports.getAllLaporan = async (req, res) => {
     
     const searchCondition = createSearchCondition(search, LaporanKegiatan.rawAttributes);
 
-    // Admin bisa lihat semua, user biasa hanya lihat laporannya sendiri
     let whereCondition = searchCondition || {};
     if (req.user.role !== 'admin') {
-      whereCondition.user_uploader_id = req.user.user_id;
+      whereCondition.pengguna_id = req.user.pengguna_id; // 🔹 Gunakan kolom baru
     }
     
     const data = await LaporanKegiatan.findAndCountAll({
       where: whereCondition,
       limit,
       offset,
-      include: [{ model: Pengguna, as: 'uploader', attributes: ['user_id', 'email', 'role'] }],
+      include: [{ model: Pengguna, as: 'uploader', attributes: ['pengguna_id', 'email', 'role'] }],
       order: [['tanggal_laporan', 'DESC']],
     });
 
@@ -48,13 +47,13 @@ exports.getAllLaporan = async (req, res) => {
 exports.getLaporanById = async (req, res) => {
   try {
     const laporan = await LaporanKegiatan.findByPk(req.params.id, {
-      include: [{ model: Pengguna, as: 'uploader', attributes: ['user_id', 'email', 'role'] }],
+      include: [{ model: Pengguna, as: 'uploader', attributes: ['pengguna_id', 'email', 'role'] }],
     });
 
     if (!laporan) return res.status(404).json({ message: 'Laporan tidak ditemukan' });
 
-    // Cek otorisasi: admin atau pemilik laporan
-    if (req.user.role !== 'admin' && laporan.user_uploader_id !== req.user.user_id) {
+    // 🔹 Cek otorisasi dengan kolom baru
+    if (req.user.role !== 'admin' && laporan.pengguna_id !== req.user.pengguna_id) {
       return res.status(403).json({ message: 'Anda tidak berhak mengakses laporan ini' });
     }
 
@@ -70,8 +69,8 @@ exports.updateLaporan = async (req, res) => {
     const laporan = await LaporanKegiatan.findByPk(req.params.id);
     if (!laporan) return res.status(404).json({ message: 'Laporan tidak ditemukan' });
 
-    // Cek otorisasi: admin atau pemilik laporan
-    if (req.user.role !== 'admin' && laporan.user_uploader_id !== req.user.user_id) {
+    // 🔹 Cek otorisasi dengan kolom baru
+    if (req.user.role !== 'admin' && laporan.pengguna_id !== req.user.pengguna_id) {
       return res.status(403).json({ message: 'Anda tidak berhak mengubah laporan ini' });
     }
 
@@ -88,8 +87,8 @@ exports.deleteLaporan = async (req, res) => {
     const laporan = await LaporanKegiatan.findByPk(req.params.id);
     if (!laporan) return res.status(404).json({ message: 'Laporan tidak ditemukan' });
 
-    // Cek otorisasi: admin atau pemilik laporan
-    if (req.user.role !== 'admin' && laporan.user_uploader_id !== req.user.user_id) {
+    // 🔹 Cek otorisasi dengan kolom baru
+    if (req.user.role !== 'admin' && laporan.pengguna_id !== req.user.pengguna_id) {
       return res.status(403).json({ message: 'Anda tidak berhak menghapus laporan ini' });
     }
 

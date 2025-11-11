@@ -1,4 +1,3 @@
-// models/pesertaPelatihan.js
 const { DataTypes } = require('sequelize');
 const db = require('../config/database');
 
@@ -12,13 +11,14 @@ const PesertaPelatihan = db.define('peserta_pelatihan', {
     type: DataTypes.INTEGER,
     allowNull: false,
   },
-  peserta_id: {
+  pengguna_id: { // 🔹 Merujuk langsung ke tabel pengguna
     type: DataTypes.INTEGER,
     allowNull: false,
   },
   tanggal_pendaftaran: {
     type: DataTypes.DATEONLY,
     allowNull: false,
+    defaultValue: DataTypes.NOW,
   },
   status_pendaftaran: {
     type: DataTypes.ENUM('terdaftar', 'dibatalkan', 'selesai'),

@@ -1,64 +1,98 @@
 const db = require('../config/database');
 
+// 🔹 Impor semua model yang baru/direvisi
 const Pengguna = require('./pengguna');
-const CalonPeserta = require('./calonPeserta');
-const Mitra = require('./mitra');
-const DaftarPelatihan = require('./daftarPelatihan');
+const DataPeserta = require('./dataPeserta');
+const DataMitra = require('./dataMitra');
+const Pelatihan = require('./pelatihan');
 const LaporanKegiatan = require('./laporanKegiatan');
 const PesertaPelatihan = require('./pesertaPelatihan');
 const ThumbnailTemporary = require('./thumbnailTemporary');
 
-/* =========================
- *  RELASI ANTAR MODEL
- * ========================= */
+// 🔹 Definisikan semua asosiasi
 
-// --- 1. Relasi Pengguna dengan Mitra dan CalonPeserta ---
-Pengguna.hasOne(Mitra, { foreignKey: 'user_id', as: 'mitra' });
-Mitra.belongsTo(Pengguna, { foreignKey: 'user_id', as: 'pengguna' });
-
-Pengguna.hasOne(CalonPeserta, { foreignKey: 'user_id', as: 'calon_peserta' });
-CalonPeserta.belongsTo(Pengguna, { foreignKey: 'user_id', as: 'pengguna' });
-
-// --- 2. Relasi Mitra dengan DaftarPelatihan ---
-Mitra.hasMany(DaftarPelatihan, { foreignKey: 'mitra_id', as: 'pelatihan_dibuat' });
-DaftarPelatihan.belongsTo(Mitra, { foreignKey: 'mitra_id', as: 'mitra' });
-
-// --- 3. Relasi Pengguna dengan LaporanKegiatan ---
-Pengguna.hasMany(LaporanKegiatan, { foreignKey: 'user_uploader_id', as: 'laporan_diupload' });
-LaporanKegiatan.belongsTo(Pengguna, { foreignKey: 'user_uploader_id', as: 'uploader' });
-
-// --- 4. Relasi Many-to-Many antara CalonPeserta dan DaftarPelatihan melalui PesertaPelatihan ---
-CalonPeserta.belongsToMany(DaftarPelatihan, {
-  through: PesertaPelatihan,
-  foreignKey: 'peserta_id',
-  otherKey: 'pelatihan_id',
-  as: 'pelatihan_diikuti',
+// --- Asosiasi One-to-One ---
+// Satu Pengguna memiliki satu DataPeserta
+Pengguna.hasOne(DataPeserta, {
+  foreignKey: 'pengguna_id',
+  as: 'data_peserta' // Alias untuk akses: pengguna.getDataPeserta()
+});
+DataPeserta.belongsTo(Pengguna, {
+  foreignKey: 'pengguna_id',
+  as: 'pengguna'
 });
 
-DaftarPelatihan.belongsToMany(CalonPeserta, {
+// Satu Pengguna memiliki satu DataMitra
+Pengguna.hasOne(DataMitra, {
+  foreignKey: 'pengguna_id',
+  as: 'data_mitra' // Alias untuk akses: pengguna.getDataMitra()
+});
+DataMitra.belongsTo(Pengguna, {
+  foreignKey: 'mitra_id',
+  as: 'pengguna'
+});
+
+
+// --- Asosiasi One-to-Many ---
+// Satu Pengguna (sebagai mitra) bisa mengajar banyak Pelatihan
+Pengguna.hasMany(Pelatihan, {
+  foreignKey: 'mitra_id',
+  as: 'pelatihan_diajar' // Alias: pengguna.getPelatihanDiajar()
+});
+
+// Satu Pelatihan diajarkan oleh satu Pengguna (sebagai mitra)
+Pelatihan.belongsTo(Pengguna, {
+  foreignKey: 'mitra_id',
+  as: 'mitra' // Alias: pelatihan.getMitra()
+});
+
+// Satu Pengguna bisa meng-upload banyak LaporanKegiatan
+Pengguna.hasMany(LaporanKegiatan, {
+  foreignKey: 'pengguna_id',
+  as: 'laporan_kegiatan' // Alias: pengguna.getLaporanKegiatan()
+});
+
+// Satu LaporanKegiatan di-upload oleh satu Pengguna
+LaporanKegiatan.belongsTo(Pengguna, {
+  foreignKey: 'pengguna_id',
+  as: 'uploader' // Alias: laporanKegiatan.getUploader()
+});
+
+
+// --- Asosiasi Many-to-Many ---
+// Satu Pengguna (sebagai peserta) bisa mendaftar ke banyak Pelatihan
+Pengguna.belongsToMany(Pelatihan, {
+  through: PesertaPelatihan,
+  foreignKey: 'pengguna_id',
+  otherKey: 'pelatihan_id',
+  as: 'pelatihan_diikuti' // Alias: pengguna.getPelatihanDiikuti()
+});
+
+// Satu Pelatihan bisa diikuti oleh banyak Pengguna (peserta)
+Pelatihan.belongsToMany(Pengguna, {
   through: PesertaPelatihan,
   foreignKey: 'pelatihan_id',
-  otherKey: 'peserta_id',
-  as: 'peserta_terdaftar',
+  otherKey: 'pengguna_id',
+  as: 'peserta_terdaftar' // Alias: pelatihan.getPesertaTerdaftar()
 });
 
-// --- 5. Relasi langsung ke tabel penghubung (PesertaPelatihan) ---
-CalonPeserta.hasMany(PesertaPelatihan, { foreignKey: 'peserta_id', as: 'pendaftaran_pelatihan' });
-PesertaPelatihan.belongsTo(CalonPeserta, { foreignKey: 'peserta_id', as: 'peserta' });
+PesertaPelatihan.belongsTo(Pengguna, {
+  foreignKey: 'pengguna_id',
+  otherKey: 'pengguna_id',
+  as: 'peserta' // Alias: pelatihan.getPeserta()
+})
 
-DaftarPelatihan.hasMany(PesertaPelatihan, { foreignKey: 'pelatihan_id', as: 'pendaftaran_peserta' });
-PesertaPelatihan.belongsTo(DaftarPelatihan, { foreignKey: 'pelatihan_id', as: 'pelatihan' });
 
-/* =========================
- *  EXPORT SEMUA MODEL
- * ========================= */
+// Sinkronisasi database (buat tabel jika belum ada)
+// db.sync({ alter: true });
+
 module.exports = {
   db,
   Pengguna,
-  CalonPeserta,
-  Mitra,
-  DaftarPelatihan,
+  DataPeserta,
+  DataMitra,
+  Pelatihan,
   LaporanKegiatan,
   PesertaPelatihan,
-  ThumbnailTemporary,
+  ThumbnailTemporary
 };

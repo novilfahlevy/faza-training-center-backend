@@ -11,12 +11,12 @@ const LaporanKegiatan = db.define('laporan_kegiatan', {
   judul_laporan: { type: DataTypes.STRING },
   isi_laporan: { type: DataTypes.TEXT },
   tanggal_laporan: { type: DataTypes.DATEONLY },
-  user_uploader_id: {
+  pengguna_id: { // 🔹 Nama kolom diubah dari user_uploader_id
     type: DataTypes.INTEGER,
     allowNull: false,
     references: {
       model: Pengguna,
-      key: 'user_id',
+      key: 'pengguna_id',
     },
   },
 }, {

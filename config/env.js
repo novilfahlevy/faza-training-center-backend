@@ -45,6 +45,10 @@ class Env {
   static get DB_SSL_CA() {
     return this.get('DB_SSL_CA');
   }
+
+  static get JWT_SECRET() {
+    return this.get('JWT_SECRET');
+  }
 }
 
 module.exports = Env;

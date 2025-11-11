@@ -1,37 +1,34 @@
 const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
-const { Pengguna } = require('../models');
+const { Pengguna, DataPeserta, DataMitra } = require('../models'); // 🔹 Impor model baru
 const Env = require('../config/env');
 
-// Login
+// Login (tidak banyak perubahan)
 exports.login = async (req, res) => {
   try {
     const { email, password } = req.body;
 
-    // Cari pengguna berdasarkan email
     const pengguna = await Pengguna.findOne({ where: { email } });
     if (!pengguna) {
       return res.status(401).json({ message: 'Email atau password salah' });
     }
 
-    // Bandingkan password yang dimasukkan dengan hash di database
     const isPasswordValid = await bcrypt.compare(password, pengguna.password_hash);
     if (!isPasswordValid) {
       return res.status(401).json({ message: 'Email atau password salah' });
     }
 
-    // Buat token JWT
     const token = jwt.sign(
-      { user_id: pengguna.user_id, role: pengguna.role },
+      { user_id: pengguna.pengguna_id, role: pengguna.role },
       Env.JWT_SECRET,
-      { expiresIn: '1d' } // Token berlaku 1 hari
+      { expiresIn: '1d' }
     );
 
     res.json({
       message: 'Login berhasil',
       token,
       user: {
-        user_id: pengguna.user_id,
+        user_id: pengguna.pengguna_id,
         email: pengguna.email,
         role: pengguna.role,
       },
@@ -41,15 +38,47 @@ exports.login = async (req, res) => {
   }
 };
 
-// Register (opsional, bisa digunakan untuk registrasi calon peserta/ mitra baru)
-// Untuk sederhananya, ini hanya membuat user, profil detailnya dibuat oleh admin
+// Register (direvisi total)
 exports.register = async (req, res) => {
-    try {
-        const { email, password, role } = req.body;
-        const hashedPassword = await bcrypt.hash(password, 10);
-        const newPengguna = await Pengguna.create({ email, password_hash: hashedPassword, role });
-        res.status(201).json({ message: 'Pengguna berhasil didaftarkan', data: { user_id: newPengguna.user_id, email: newPengguna.email, role: newPengguna.role } });
-    } catch (error) {
-        res.status(500).json({ message: 'Gagal mendaftarkan pengguna', error: error.message });
+  try {
+    const { email, password, role, ...dataDiri } = req.body;
+    const hashedPassword = await bcrypt.hash(password, 10);
+
+    // 1. Buat pengguna baru
+    const newPengguna = await Pengguna.create({
+      email,
+      password_hash: hashedPassword,
+      role,
+    });
+
+    let dataTambahan = null;
+
+    // 2. Jika role 'peserta', buat data_peserta
+    if (role === 'peserta') {
+      const newDataPeserta = await DataPeserta.create({
+        ...dataDiri,
+        pengguna_id: newPengguna.pengguna_id,
+      });
+      dataTambahan = newDataPeserta;
+    } 
+    // 3. Jika role 'mitra', buat data_mitra
+    else if (role === 'mitra') {
+      const newDataMitra = await DataMitra.create({
+        ...dataDiri,
+        pengguna_id: newPengguna.pengguna_id,
+      });
+      dataTambahan = newDataMitra;
     }
-}
+
+    res.status(201).json({
+      message: 'Registrasi berhasil',
+      data: {
+        pengguna: { user_id: newPengguna.pengguna_id, email: newPengguna.email, role: newPengguna.role },
+        [role]: dataTambahan, // Kembalikan data_peserta atau data_mitra
+      },
+    });
+  } catch (error) {
+    console.error("❌ Gagal registrasi:", error);
+    res.status(500).json({ message: 'Gagal mendaftarkan pengguna', error: error.message });
+  }
+};

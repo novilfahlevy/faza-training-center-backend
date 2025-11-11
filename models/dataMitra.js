@@ -2,7 +2,7 @@ const { DataTypes } = require('sequelize');
 const db = require('../config/database');
 const Pengguna = require('./pengguna');
 
-const Mitra = db.define('mitra', {
+const DataMitra = db.define('data_mitra', { // 🔹 Nama model dan tabel diubah
   mitra_id: {
     type: DataTypes.INTEGER,
     primaryKey: true,
@@ -12,19 +12,19 @@ const Mitra = db.define('mitra', {
   deskripsi_mitra: { type: DataTypes.TEXT },
   alamat_mitra: { type: DataTypes.STRING },
   telepon_mitra: { type: DataTypes.STRING },
-  email_mitra: { type: DataTypes.STRING },
   website_mitra: { type: DataTypes.STRING },
-  user_id: {
+  pengguna_id: {
     type: DataTypes.INTEGER,
     allowNull: false,
+    unique: true, // 🔹 Pastikan satu data_mitra hanya untuk satu pengguna
     references: {
       model: Pengguna,
-      key: 'user_id',
+      key: 'pengguna_id',
     },
   },
 }, {
-  tableName: 'mitra',
+  tableName: 'data_mitra', // 🔹 Nama tabel diubah
   timestamps: false,
 });
 
-module.exports = Mitra;
+module.exports = DataMitra;

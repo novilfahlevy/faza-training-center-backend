@@ -2,12 +2,13 @@ const { DataTypes } = require('sequelize');
 const db = require('../config/database');
 const Pengguna = require('./pengguna');
 
-const CalonPeserta = db.define('calon_peserta', {
-  peserta_id: {
+const DataPeserta = db.define('data_peserta', { // 🔹 Nama model dan tabel diubah
+  data_peserta_id: { // 🔹 Primary key diubah
     type: DataTypes.INTEGER,
     primaryKey: true,
     autoIncrement: true,
   },
+  no_telp: { type: DataTypes.STRING },
   nama_lengkap: { type: DataTypes.STRING },
   tempat_lahir: { type: DataTypes.STRING },
   tanggal_lahir: { type: DataTypes.DATEONLY },
@@ -16,18 +17,18 @@ const CalonPeserta = db.define('calon_peserta', {
   profesi: { type: DataTypes.STRING },
   instansi: { type: DataTypes.STRING },
   no_reg_kes: { type: DataTypes.STRING },
-  no_telp: { type: DataTypes.STRING },
-  user_id: {
+  pengguna_id: {
     type: DataTypes.INTEGER,
     allowNull: false,
+    unique: true, // 🔹 Pastikan satu data_peserta hanya untuk satu pengguna
     references: {
       model: Pengguna,
-      key: 'user_id',
+      key: 'pengguna_id',
     },
   },
 }, {
-  tableName: 'calon_peserta',
+  tableName: 'data_peserta', // 🔹 Nama tabel diubah
   timestamps: false,
 });
 
-module.exports = CalonPeserta;
+module.exports = DataPeserta;
