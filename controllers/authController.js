@@ -3,7 +3,6 @@ const jwt = require('jsonwebtoken');
 const { Pengguna, DataPeserta, DataMitra } = require('../models'); // 🔹 Impor model baru
 const Env = require('../config/env');
 
-// Login (tidak banyak perubahan)
 exports.login = async (req, res) => {
   try {
     const { email, password } = req.body;
@@ -14,7 +13,7 @@ exports.login = async (req, res) => {
     }
 
     if (pengguna.role == 'peserta') {
-      return res.status(403).json({ message: 'Hanya admin dan mitra yang dapat mengakses halaman ini.' });
+      return res.status(401).json({ message: 'Email atau password salah' });
     }
 
     const isPasswordValid = await bcrypt.compare(password, pengguna.password_hash);
@@ -42,7 +41,52 @@ exports.login = async (req, res) => {
   }
 };
 
-// Register (direvisi total)
+exports.loginPeserta = async (req, res) => {
+  try {
+    const { email, password } = req.body;
+
+    const pengguna = await Pengguna.findOne({
+      where: { email },
+      include: [{
+        model: DataPeserta,
+        as: 'data_peserta',
+        attributes: ['nama_lengkap']
+      }]
+    });
+    if (!pengguna) {
+      return res.status(401).json({ message: 'Email atau password salah' });
+    }
+
+    if (pengguna.role != 'peserta') {
+      return res.status(401).json({ message: 'Email atau password salah.' });
+    }
+
+    const isPasswordValid = await bcrypt.compare(password, pengguna.password_hash);
+    if (!isPasswordValid) {
+      return res.status(401).json({ message: 'Email atau password salah' });
+    }
+
+    const token = jwt.sign(
+      { user_id: pengguna.pengguna_id, role: pengguna.role },
+      Env.JWT_SECRET,
+      { expiresIn: '1d' }
+    );
+
+    res.json({
+      message: 'Login berhasil',
+      token,
+      user: {
+        user_id: pengguna.pengguna_id,
+        nama_lengkap: pengguna.data_peserta.nama_lengkap,
+        email: pengguna.email,
+        role: pengguna.role,
+      },
+    });
+  } catch (error) {
+    res.status(500).json({ message: 'Terjadi kesalahan pada server', error: error.message });
+  }
+};
+
 exports.register = async (req, res) => {
   try {
     const { email, password, role, ...dataDiri } = req.body;
