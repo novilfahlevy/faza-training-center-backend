@@ -8,6 +8,7 @@ const { authMiddleware, adminMiddleware } = require('../middleware/authMiddlewar
 router.post('/', authMiddleware, adminMiddleware, pelatihanController.createPelatihan);
 router.get('/', pelatihanController.getAllPelatihan); // 🔹 Endpoint publik untuk daftar pelatihan
 router.get('/:id', pelatihanController.getPelatihanById); // 🔹 Endpoint publik untuk detail pelatihan
+router.get('/by-slug/:slug', pelatihanController.getPelatihanBySlug); // 🔹 Endpoint publik untuk detail pelatihan
 router.put('/:id', authMiddleware, adminMiddleware, pelatihanController.updatePelatihan);
 router.delete('/:id', authMiddleware, adminMiddleware, pelatihanController.deletePelatihan);
 

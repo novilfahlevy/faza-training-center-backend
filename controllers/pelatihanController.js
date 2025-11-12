@@ -22,6 +22,16 @@ const storage = multer.diskStorage({
 
 const upload = multer({ storage });
 
+function generateSlug(nama) {
+  return nama
+    .toString()
+    .toLowerCase()
+    .trim()
+    .replace(/[^a-z0-9\s-]/g, "")   // hapus karakter non-alphanumeric
+    .replace(/\s+/g, "-")           // ganti spasi dengan tanda "-"
+    .replace(/-+/g, "-");           // hindari tanda "-" ganda
+}
+
 // Upload Thumbnail
 exports.uploadThumbnail = [
   upload.single("file"),
@@ -62,6 +72,11 @@ exports.uploadThumbnail = [
 exports.createPelatihan = async (req, res) => {
   try {
     const { thumbnail_id } = req.body;
+
+    if (req.body.nama_pelatihan) {
+      req.body.slug_pelatihan = generateSlug(req.body.nama_pelatihan);
+    }
+
     const newPelatihan = await Pelatihan.create(req.body);
 
     if (thumbnail_id) {
@@ -156,6 +171,39 @@ exports.getPelatihanById = async (req, res) => {
   }
 };
 
+// READ (By Slug)
+exports.getPelatihanBySlug = async (req, res) => {
+  try {
+    const pelatihan = await Pelatihan.findOne({
+      where: { slug_pelatihan: req.params.slug },
+      include: [{
+        model: Pengguna,
+        as: "mitra",
+        include: [{
+          model: DataMitra,
+          as: 'data_mitra'
+        }]
+      }],
+    });
+
+    if (!pelatihan) return res.status(404).json({ message: "Pelatihan tidak ditemukan" });
+
+    // Lengkapi URL dari thumbnail_url
+    if (pelatihan.thumbnail_url) {
+      pelatihan.thumbnail_url = `${Env.APP_URL.replace(/\/$/, "")}/${pelatihan.thumbnail_url.replace(/^\//, "")}`
+    }
+
+    res.json(pelatihan);
+  } catch (error) {
+    res
+      .status(500)
+      .json({
+        message: "Gagal mengambil data pelatihan",
+        error: error.message,
+      });
+  }
+};
+
 // UPDATE
 exports.updatePelatihan = async (req, res) => {
   try {
@@ -165,6 +213,10 @@ exports.updatePelatihan = async (req, res) => {
     const existingPelatihan = await Pelatihan.findByPk(id);
     if (!existingPelatihan) {
       return res.status(404).json({ message: "Pelatihan tidak ditemukan" });
+    }
+
+    if (bodyWithoutThumbnail.nama_pelatihan) {
+      bodyWithoutThumbnail.slug_pelatihan = generateSlug(bodyWithoutThumbnail.nama_pelatihan);
     }
 
     await existingPelatihan.update(bodyWithoutThumbnail);

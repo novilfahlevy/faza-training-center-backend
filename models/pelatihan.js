@@ -10,6 +10,7 @@ const Pelatihan = db.define('pelatihan', { // 🔹 Nama model dan tabel diubah
   },
   thumbnail_url: { type: DataTypes.STRING },
   nama_pelatihan: { type: DataTypes.STRING },
+  slug_pelatihan: { type: DataTypes.STRING },
   deskripsi_pelatihan: { type: DataTypes.TEXT },
   tanggal_pelatihan: { type: DataTypes.DATE },
   durasi_pelatihan: { type: DataTypes.STRING },
