@@ -44,10 +44,15 @@ exports.getAllDataPeserta = async (req, res) => {
 };
 
 // READ (By ID)
-exports.getDataPesertaById = async (req, res) => {
+exports.getDataPeserta = async (req, res) => {
   try {
-    const dataPeserta = await DataPeserta.findByPk(req.params.id, {
-      include: [{ model: Pengguna, as: 'pengguna', attributes: ['pengguna_id', 'email', 'role'] }],
+    const dataPeserta = await DataPeserta.findOne({
+      include: [{
+        model: Pengguna,
+        as: 'pengguna',
+        attributes: ['pengguna_id', 'email', 'role'],
+        where: { pengguna_id: req.user.pengguna_id }
+      }],
     });
     if (!dataPeserta) return res.status(404).json({ message: 'Data peserta tidak ditemukan' });
     res.json(dataPeserta);
@@ -59,12 +64,37 @@ exports.getDataPesertaById = async (req, res) => {
 // UPDATE
 exports.updateDataPeserta = async (req, res) => {
   try {
-    const { id } = req.params;
-    const [updated] = await DataPeserta.update(req.body, { where: { data_peserta_id: id } }); // 🔹 PK baru
-    if (!updated) return res.status(404).json({ message: 'Data peserta tidak ditemukan' });
-    res.json({ message: 'Data peserta berhasil diperbarui' });
+    const penggunaId = req.user?.pengguna_id || req.params.id;
+    const allowedFields = [
+      'no_telp', 'nama_lengkap', 'tempat_lahir', 'tanggal_lahir',
+      'jenis_kelamin', 'alamat', 'profesi', 'instansi', 'no_reg_kes'
+    ];
+
+    const payload = {};
+    allowedFields.forEach((field) => {
+      if (req.body[field] !== undefined) payload[field] = req.body[field];
+    });
+
+    const [updated] = await DataPeserta.update(payload, {
+      where: { pengguna_id: penggunaId },
+    });
+
+    if (!updated)
+      return res.status(404).json({ message: 'Data peserta tidak ditemukan' });
+
+    const updatedData = await DataPeserta.findOne({
+      where: { pengguna_id: penggunaId },
+    });
+
+    res.json({
+      message: 'Profil peserta berhasil diperbarui',
+      data: updatedData,
+    });
   } catch (error) {
-    res.status(500).json({ message: 'Gagal memperbarui data peserta', error: error.message });
+    res.status(500).json({
+      message: 'Gagal memperbarui profil peserta',
+      error: error.message,
+    });
   }
 };
 

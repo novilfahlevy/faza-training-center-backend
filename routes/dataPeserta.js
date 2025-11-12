@@ -6,13 +6,11 @@ const { authMiddleware, adminMiddleware } = require('../middleware/authMiddlewar
 
 // --- Endpoint CRUD Data Peserta (untuk admin) ---
 router.post('/', authMiddleware, adminMiddleware, dataPesertaController.createDataPeserta);
-router.get('/', authMiddleware, adminMiddleware, dataPesertaController.getAllDataPeserta);
-router.get('/:id', authMiddleware, adminMiddleware, dataPesertaController.getDataPesertaById);
-router.put('/:id', authMiddleware, adminMiddleware, dataPesertaController.updateDataPeserta);
+router.get('/', authMiddleware, dataPesertaController.getDataPeserta);
+router.put('/', authMiddleware, dataPesertaController.updateDataPeserta);
 router.delete('/:id', authMiddleware, adminMiddleware, dataPesertaController.deleteDataPeserta);
 
 // --- Endpoint untuk Peserta (setelah login) ---
-// Peserta melihat riwayat pelatihan yang diikuti
-router.get('/registrasi-saya', authMiddleware, pesertaPelatihanController.getUserRegistrations);
+router.get('/registrasi-saya', authMiddleware, pesertaPelatihanController.getUserRegistrations); // Peserta melihat riwayat pelatihan yang diikuti
 
 module.exports = router;
