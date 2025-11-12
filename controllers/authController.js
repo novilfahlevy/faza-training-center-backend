@@ -13,6 +13,10 @@ exports.login = async (req, res) => {
       return res.status(401).json({ message: 'Email atau password salah' });
     }
 
+    if (pengguna.role == 'peserta') {
+      return res.status(403).json({ message: 'Hanya admin dan mitra yang dapat mengakses halaman ini.' });
+    }
+
     const isPasswordValid = await bcrypt.compare(password, pengguna.password_hash);
     if (!isPasswordValid) {
       return res.status(401).json({ message: 'Email atau password salah' });
