@@ -1,8 +1,11 @@
-const { PesertaPelatihan, Pelatihan, Pengguna } = require("../models");
+const { PesertaPelatihan, Pelatihan, Pengguna, DataPeserta } = require("../models");
 const path = require("path");
 const fs = require("fs");
 const multer = require("multer");
 const Env = require("../config/env");
+const { getPagingData, getPagination } = require("../utils/pagination");
+const makePesertaPelatihanListRequest = require("../requests/pesertaPelatihanRequest");
+const { Op } = require("sequelize");
 
 // --- Setup direktori upload bukti pembayaran ---
 const buktiDir = path.join(__dirname, "../uploads/bukti_pembayaran");
@@ -108,21 +111,66 @@ exports.cancelRegistration = async (req, res) => {
 // --- GET PESERTA (Admin) ---
 exports.getTrainingParticipants = async (req, res) => {
   try {
+    const { page, size, search } = req.query;
+    const { limit, offset } = getPagination(page, size);
     const pelatihan_id = req.params.pelatihanId;
-    const pesertaList = await PesertaPelatihan.findAll({
-      where: { pelatihan_id },
+
+    const whereCondition = { pelatihan_id };
+
+    if (search && search.trim() !== "") {
+      whereCondition[Op.or] = [
+        // Kolom di DataPeserta
+        { "$peserta.data_peserta.nama_lengkap$": { [Op.like]: `%${search}%` } },
+        { "$peserta.data_peserta.no_telp$": { [Op.like]: `%${search}%` } },
+        { "$peserta.data_peserta.profesi$": { [Op.like]: `%${search}%` } },
+        { "$peserta.data_peserta.instansi$": { [Op.like]: `%${search}%` } },
+
+        // Kolom di Pengguna
+        { "$peserta.email$": { [Op.like]: `%${search}%` } },
+      ];
+    }
+
+    // 🔹 Query utama
+    const data = await PesertaPelatihan.findAndCountAll({
+      where: whereCondition,
+      limit,
+      offset,
       include: [
         {
           model: Pengguna,
           as: "peserta",
           attributes: ["pengguna_id", "email", "role"],
+          include: [
+            {
+              model: DataPeserta,
+              as: "data_peserta",
+              required: false,
+              attributes: [
+                "nama_lengkap",
+                "no_telp",
+                "profesi",
+                "instansi",
+              ],
+            },
+          ],
+        },
+        {
+          model: Pelatihan,
+          as: "pelatihan",
         },
       ],
+      order: [["id", "ASC"]],
     });
 
-    res.json({ count: pesertaList.length, data: pesertaList });
+    // 🔹 Format response
+    data.rows = data.rows.map((row) => makePesertaPelatihanListRequest(row));
+    const response = getPagingData(data, page, limit);
+
+    res.json(response);
   } catch (error) {
     console.error("❌ Error getTrainingParticipants:", error);
-    res.status(500).json({ message: "Gagal mengambil data peserta", error: error.message });
+    res
+      .status(500)
+      .json({ message: "Gagal mengambil data peserta", error: error.message });
   }
 };

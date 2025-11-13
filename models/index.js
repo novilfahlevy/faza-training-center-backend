@@ -79,9 +79,14 @@ Pelatihan.belongsToMany(Pengguna, {
 PesertaPelatihan.belongsTo(Pengguna, {
   foreignKey: 'pengguna_id',
   otherKey: 'pengguna_id',
-  as: 'peserta' // Alias: pelatihan.getPeserta()
+  as: 'peserta' // Alias: pesertaPelatihan.getPeserta()
 })
 
+PesertaPelatihan.belongsTo(Pelatihan, {
+  foreignKey: 'pelatihan_id',
+  otherKey: 'pelatihan_id',
+  as: 'pelatihan' // Alias: pesertaPelatihan.getPelatihan()
+})
 
 // Sinkronisasi database (buat tabel jika belum ada)
 // db.sync({ alter: true });

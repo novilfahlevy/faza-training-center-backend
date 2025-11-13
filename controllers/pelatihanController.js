@@ -115,7 +115,7 @@ exports.getAllPelatihan = async (req, res) => {
       where: condition,
       limit,
       offset,
-      include: [{ model: Pengguna, as: "mitra" }], // 🔹 Relasi ke Pengguna
+      include: [{ model: Pengguna, as: "mitra" }],
     });
 
     const response = getPagingData(data, page, limit);
