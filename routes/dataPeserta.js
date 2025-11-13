@@ -11,6 +11,6 @@ router.put('/', authMiddleware, dataPesertaController.updateDataPeserta);
 router.delete('/:id', authMiddleware, adminMiddleware, dataPesertaController.deleteDataPeserta);
 
 // --- Endpoint untuk Peserta (setelah login) ---
-router.get('/registrasi-saya', authMiddleware, pesertaPelatihanController.getUserRegistrations); // Peserta melihat riwayat pelatihan yang diikuti
+// router.get('/registrasi-saya', authMiddleware, pesertaPelatihanController.getUserRegistrations); // Peserta melihat riwayat pelatihan yang diikuti
 
 module.exports = router;

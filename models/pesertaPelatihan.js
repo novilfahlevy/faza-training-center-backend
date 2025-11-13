@@ -25,6 +25,10 @@ const PesertaPelatihan = db.define('peserta_pelatihan', {
     allowNull: false,
     defaultValue: 'terdaftar',
   },
+  bukti_pembayaran_filename: {
+      type: DataTypes.STRING,
+      allowNull: false,
+    },
 }, {
   tableName: 'peserta_pelatihan',
   timestamps: false,

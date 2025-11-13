@@ -1,144 +1,128 @@
-const { DataPeserta, Pelatihan, PesertaPelatihan, Pengguna } = require('../models'); // 🔹 Model baru
-const { getPagingData, getPagination } = require('../utils/pagination');
-const { Op, DataTypes } = require("sequelize");
+const { PesertaPelatihan, Pelatihan, Pengguna } = require("../models");
+const path = require("path");
+const fs = require("fs");
+const multer = require("multer");
+const Env = require("../config/env");
 
-// Peserta mendaftar ke pelatihan
+// --- Setup direktori upload bukti pembayaran ---
+const buktiDir = path.join(__dirname, "../uploads/bukti_pembayaran");
+if (!fs.existsSync(buktiDir)) fs.mkdirSync(buktiDir, { recursive: true });
+
+// --- Konfigurasi multer ---
+const storage = multer.diskStorage({
+  destination: (req, file, cb) => cb(null, buktiDir),
+  filename: (req, file, cb) => {
+    const ext = path.extname(file.originalname);
+    cb(null, `bukti_${Date.now()}${ext}`);
+  },
+});
+const upload = multer({
+  storage,
+  limits: { fileSize: 5 * 1024 * 1024 }, // Maks 5MB
+}).single("bukti_pembayaran");
+
+// --- REGISTER PESERTA ---
 exports.registerForTraining = async (req, res) => {
-  try {
-    const { pelatihanId } = req.params;
-    const userId = req.user.pengguna_id;
+  upload(req, res, async (err) => {
+    try {
+      // Validasi upload error
+      if (err instanceof multer.MulterError) {
+        return res.status(400).json({ message: "File terlalu besar (maks 5MB)" });
+      } else if (err) {
+        return res.status(400).json({ message: err.message });
+      }
 
-    if (req.user.role !== 'peserta') {
-      return res.status(403).json({ message: 'Hanya peserta yang bisa mendaftar.' });
+      const pengguna_id = req.user.pengguna_id;
+      const slug_pelatihan = req.params.slug;
+
+      // Cek pelatihan
+      const pelatihan = await Pelatihan.findOne({ where: { slug_pelatihan } });
+      if (!pelatihan) {
+        return res.status(404).json({ message: "Pelatihan tidak ditemukan" });
+      }
+
+      const pelatihan_id = pelatihan.pelatihan_id;
+
+      // Cegah duplikasi
+      const existing = await PesertaPelatihan.findOne({ where: { pengguna_id, pelatihan_id } });
+      if (existing) {
+        return res.status(400).json({ message: "Anda sudah terdaftar di pelatihan ini" });
+      }
+
+      // Pastikan file dikirim
+      if (!req.file) {
+        return res.status(400).json({ message: "Bukti pembayaran wajib diunggah" });
+      }
+
+      // Simpan data ke DB
+      const peserta = await PesertaPelatihan.create({
+        pengguna_id,
+        pelatihan_id,
+        tanggal_pendaftaran: new Date(),
+        status_pendaftaran: "terdaftar",
+        bukti_pembayaran_filename: `/uploads/bukti_pembayaran/${req.file.filename}`,
+      });
+
+      // Buat URL bukti
+      const bukti_url = `${Env.APP_URL.replace(/\/$/, "")}/uploads/bukti_pembayaran/${req.file.filename}`;
+
+      res.status(201).json({
+        message: "Pendaftaran pelatihan berhasil",
+        data: { ...peserta.toJSON(), bukti_pembayaran_url: bukti_url },
+      });
+    } catch (error) {
+      console.error("❌ Error registerForTraining:", error);
+      res.status(500).json({
+        message: "Gagal mendaftar pelatihan",
+        error: error.message,
+      });
     }
-
-    // Cari data peserta berdasarkan user yang login
-    const dataPeserta = await DataPeserta.findOne({ where: { pengguna_id: userId } });
-    if (!dataPeserta) {
-      return res.status(404).json({ message: 'Profil peserta tidak ditemukan.' });
-    }
-
-    // Cek apakah pelatihan ada
-    const pelatihan = await Pelatihan.findByPk(pelatihanId);
-    if (!pelatihan) {
-      return res.status(404).json({ message: 'Pelatihan tidak ditemukan.' });
-    }
-
-    // Cek apakah sudah terdaftar
-    const existingRegistration = await PesertaPelatihan.findOne({
-      where: { pelatihan_id: pelatihanId, pengguna_id: userId } // 🔹 Relasi ke pengguna_id
-    });
-    if (existingRegistration) {
-      return res.status(400).json({ message: 'Anda sudah terdaftar di pelatihan ini.' });
-    }
-
-    // Tambahkan pendaftaran menggunakan asosiasi
-    await dataPeserta.addPelatihan_diikuti(pelatihan, {
-      through: { tanggal_pendaftaran: new Date() }
-    });
-
-    res.status(201).json({ message: 'Berhasil mendaftar ke pelatihan.' });
-  } catch (error) {
-    res.status(500).json({ message: 'Gagal mendaftar', error: error.message });
-  }
+  });
 };
 
-// Peserta membatalkan pendaftaran
+// --- CANCEL REGISTRATION ---
 exports.cancelRegistration = async (req, res) => {
   try {
-    const { pelatihanId } = req.params;
-    const userId = req.user.pengguna_id;
+    const pengguna_id = req.user.pengguna_id;
+    const pelatihan_id = req.params.pelatihanId;
 
-    if (req.user.role !== 'peserta') {
-      return res.status(403).json({ message: 'Akses ditolak.' });
+    const peserta = await PesertaPelatihan.findOne({ where: { pengguna_id, pelatihan_id } });
+    if (!peserta) {
+      return res.status(404).json({ message: "Pendaftaran tidak ditemukan" });
     }
 
-    const dataPeserta = await DataPeserta.findOne({ where: { pengguna_id: userId } });
-    if (!dataPeserta) {
-      return res.status(404).json({ message: 'Profil peserta tidak ditemukan.' });
+    // Opsional: hapus file bukti pembayaran
+    if (peserta.bukti_pembayaran_filename) {
+      const filePath = path.join(__dirname, `../${peserta.bukti_pembayaran_filename}`);
+      if (fs.existsSync(filePath)) fs.unlinkSync(filePath);
     }
 
-    // Hapus pendaftaran menggunakan asosiasi
-    await dataPeserta.removePelatihan_diikuti(pelatihanId);
-
-    res.json({ message: 'Pendaftaran berhasil dibatalkan.' });
+    await peserta.update({ status_pendaftaran: "dibatalkan" });
+    res.json({ message: "Pendaftaran berhasil dibatalkan" });
   } catch (error) {
-    res.status(500).json({ message: 'Gagal membatalkan pendaftaran', error: error.message });
+    console.error("❌ Error cancelRegistration:", error);
+    res.status(500).json({ message: "Gagal membatalkan pendaftaran", error: error.message });
   }
 };
 
-// Admin melihat semua peserta di sebuah pelatihan
+// --- GET PESERTA (Admin) ---
 exports.getTrainingParticipants = async (req, res) => {
   try {
-    const { pelatihanId } = req.params;
-    const { page, size, search } = req.query;
-    const { limit, offset } = getPagination(page, size);
-
-    const pelatihan = await Pelatihan.findByPk(pelatihanId);
-    if (!pelatihan) {
-      return res.status(404).json({ message: 'Pelatihan tidak ditemukan.' });
-    }
-
-    // 🔹 Gabungkan pencarian di nama_lengkap, no_telp, dan email
-    const searchCondition = search
-      ? {
-          [Op.or]: [
-            { '$peserta.nama_lengkap$': { [Op.like]: `%${search}%` } },
-            { '$peserta.no_telp$': { [Op.like]: `%${search}%` } },
-            { '$peserta.pengguna.email$': { [Op.like]: `%${search}%` } },
-          ],
-        }
-      : {};
-
-    const { count, rows } = await PesertaPelatihan.findAndCountAll({
-      where: {
-        pelatihan_id: pelatihanId,
-        ...searchCondition,
-      },
+    const pelatihan_id = req.params.pelatihanId;
+    const pesertaList = await PesertaPelatihan.findAll({
+      where: { pelatihan_id },
       include: [
         {
           model: Pengguna,
-          as: 'peserta',
-          attributes: ['email'],
+          as: "peserta",
+          attributes: ["pengguna_id", "email", "role"],
         },
       ],
-      limit,
-      offset,
-      distinct: true,
     });
 
-    const data = getPagingData({ count, rows }, page, limit);
-    res.json(data);
+    res.json({ count: pesertaList.length, data: pesertaList });
   } catch (error) {
-    console.error(error);
-    res.status(500).json({
-      message: 'Gagal mengambil data peserta',
-      error: error.message,
-    });
-  }
-};
-
-// Peserta melihat riwayat pelatihan yang diikuti
-exports.getUserRegistrations = async (req, res) => {
-  try {
-    const userId = req.user.pengguna_id;
-
-    const dataPeserta = await DataPeserta.findOne({
-      where: { pengguna_id: userId },
-      include: [{
-        model: Pelatihan,
-        as: 'pelatihan_diikuti',
-        through: { attributes: ['tanggal_pendaftaran', 'status_pendaftaran'] },
-        include: [{ model: Pengguna, as: 'mitra' }] // Sertakan info mitra jika ada
-      }]
-    });
-
-    if (!dataPeserta) {
-      return res.status(404).json({ message: 'Profil peserta tidak ditemukan.' });
-    }
-
-    res.json(dataPeserta.pelatihan_diikuti);
-  } catch (error) {
-    res.status(500).json({ message: 'Gagal mengambil riwayat pendaftaran', error: error.message });
+    console.error("❌ Error getTrainingParticipants:", error);
+    res.status(500).json({ message: "Gagal mengambil data peserta", error: error.message });
   }
 };

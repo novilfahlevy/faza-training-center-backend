@@ -13,11 +13,8 @@ router.put('/:id', authMiddleware, adminMiddleware, pelatihanController.updatePe
 router.delete('/:id', authMiddleware, adminMiddleware, pelatihanController.deletePelatihan);
 
 // --- Endpoint untuk Manajemen Pendaftaran (untuk peserta & admin) ---
-// Peserta mendaftar ke pelatihan
-router.post('/:pelatihanId/register', authMiddleware, pesertaPelatihanController.registerForTraining);
-// Peserta membatalkan pendaftaran
-router.delete('/:pelatihanId/register', authMiddleware, pesertaPelatihanController.cancelRegistration);
-// Admin melihat semua peserta di sebuah pelatihan
+router.post('/:slug/register', authMiddleware, pesertaPelatihanController.registerForTraining);
+router.delete('/:slug/register', authMiddleware, pesertaPelatihanController.cancelRegistration);
 router.get('/:pelatihanId/peserta', authMiddleware, adminMiddleware, pesertaPelatihanController.getTrainingParticipants);
 
 // Route upload thumbnail
