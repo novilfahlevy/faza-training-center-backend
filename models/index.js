@@ -28,7 +28,7 @@ Pengguna.hasOne(DataMitra, {
   as: 'data_mitra' // Alias untuk akses: pengguna.getDataMitra()
 });
 DataMitra.belongsTo(Pengguna, {
-  foreignKey: 'mitra_id',
+  foreignKey: 'pengguna_id',
   as: 'pengguna'
 });
 
