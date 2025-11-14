@@ -11,11 +11,18 @@ router.get('/:id', pelatihanController.getPelatihanById); // 🔹 Endpoint publi
 router.get('/by-slug/:slug', pelatihanController.getPelatihanBySlug); // 🔹 Endpoint publik untuk detail pelatihan
 router.put('/:id', authMiddleware, adminMiddleware, pelatihanController.updatePelatihan);
 router.delete('/:id', authMiddleware, adminMiddleware, pelatihanController.deletePelatihan);
+router.get('/:pelatihanId/peserta', authMiddleware, adminMiddleware, pesertaPelatihanController.getTrainingParticipants);
 
-// --- Endpoint untuk Manajemen Pendaftaran (untuk peserta & admin) ---
+// --- Endpoint untuk Manajemen Pendaftaran (untuk peserta) ---
+router.get('/:slug/register', authMiddleware, pesertaPelatihanController.getTrainingParticipant);
 router.post('/:slug/register', authMiddleware, pesertaPelatihanController.registerForTraining);
 router.delete('/:slug/register', authMiddleware, pesertaPelatihanController.cancelRegistration);
-router.get('/:pelatihanId/peserta', authMiddleware, adminMiddleware, pesertaPelatihanController.getTrainingParticipants);
+router.put(
+  '/peserta/:pesertaPelatihanId/status',
+  authMiddleware,
+  adminMiddleware,
+  pesertaPelatihanController.updatePesertaStatus
+);
 
 // Route upload thumbnail
 router.post('/upload-thumbnail', pelatihanController.uploadThumbnail);

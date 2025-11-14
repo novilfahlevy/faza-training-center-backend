@@ -6,6 +6,7 @@ const Env = require("../config/env");
 const { getPagingData, getPagination } = require("../utils/pagination");
 const makePesertaPelatihanListRequest = require("../requests/pesertaPelatihanRequest");
 const { Op } = require("sequelize");
+const makeStatusPendaftaranResponse = require("../requests/statusPendaftaranResponse");
 
 // --- Setup direktori upload bukti pembayaran ---
 const buktiDir = path.join(__dirname, "../uploads/bukti_pembayaran");
@@ -62,7 +63,7 @@ exports.registerForTraining = async (req, res) => {
         pengguna_id,
         pelatihan_id,
         tanggal_pendaftaran: new Date(),
-        status_pendaftaran: "terdaftar",
+        status_pendaftaran: "pending",
         bukti_pembayaran_filename: `/uploads/bukti_pembayaran/${req.file.filename}`,
       });
 
@@ -100,7 +101,7 @@ exports.cancelRegistration = async (req, res) => {
       if (fs.existsSync(filePath)) fs.unlinkSync(filePath);
     }
 
-    await peserta.update({ status_pendaftaran: "dibatalkan" });
+    await peserta.update({ status_pendaftaran: "pending" });
     res.json({ message: "Pendaftaran berhasil dibatalkan" });
   } catch (error) {
     console.error("❌ Error cancelRegistration:", error);
@@ -172,5 +173,107 @@ exports.getTrainingParticipants = async (req, res) => {
     res
       .status(500)
       .json({ message: "Gagal mengambil data peserta", error: error.message });
+  }
+};
+
+// --- GET PESERTA (Peserta) ---
+exports.getTrainingParticipant = async (req, res) => {
+  try {
+    const { slug } = req.params;
+
+    // Ambil pengguna yang sedang login (misal dari JWT)
+    const pesertaId = req.user?.pengguna_id;
+    if (!pesertaId) {
+      return res.status(401).json({ message: "User belum terautentikasi" });
+    }
+
+    // Cari pelatihan berdasarkan slug
+    const pelatihan = await Pelatihan.findOne({
+      where: { slug_pelatihan: slug },
+      attributes: ["pelatihan_id", "nama_pelatihan", "slug_pelatihan", "tanggal_pelatihan", "durasi_pelatihan"],
+    });
+
+    if (!pelatihan) {
+      return res.status(404).json({ message: "Pelatihan tidak ditemukan" });
+    }
+
+    // Cari data kepesertaan berdasarkan pelatihan_id + peserta_id
+    const pesertaPelatihan = await PesertaPelatihan.findOne({
+      attributes: ["pelatihan_id", "status_pendaftaran", "bukti_pembayaran_filename"],
+      where: {
+        pelatihan_id: pelatihan.pelatihan_id,
+        pengguna_id: pesertaId,
+      },
+      include: [
+        {
+          model: Pengguna,
+          as: "peserta",
+          attributes: ["pengguna_id", "email", "role"],
+          include: [
+            {
+              model: DataPeserta,
+              as: "data_peserta",
+              attributes: [
+                "nama_lengkap",
+                "no_telp",
+                "profesi",
+                "instansi",
+              ],
+            },
+          ],
+        },
+      ],
+    });
+
+    if (!pesertaPelatihan) {
+      return res.status(404).json({
+        message: "Anda belum terdaftar pada pelatihan ini",
+        status_pendaftaran: "Belum mendaftar",
+      });
+    }
+
+    return res.json(makeStatusPendaftaranResponse(pesertaPelatihan));
+
+  } catch (error) {
+    console.error("❌ Error getTrainingParticipant:", error);
+    res.status(500).json({
+      message: "Gagal mengambil status pendaftaran",
+      error: error.message,
+    });
+  }
+};
+
+exports.updatePesertaStatus = async (req, res) => {
+  try {
+    const { pesertaPelatihanId } = req.params;
+    const { status_pendaftaran } = req.body;
+
+    // Validasi status
+    const allowedStatus = ["terdaftar", "pending", "selesai"];
+    if (!allowedStatus.includes(status_pendaftaran)) {
+      return res.status(400).json({
+        message: "Status tidak valid. Gunakan: terdaftar | pending | selesai",
+      });
+    }
+
+    const peserta = await PesertaPelatihan.findByPk(pesertaPelatihanId);
+
+    if (!peserta) {
+      return res.status(404).json({ message: "Peserta tidak ditemukan" });
+    }
+
+    peserta.status_pendaftaran = status_pendaftaran;
+    await peserta.save();
+
+    res.status(200).json({
+      message: "Status peserta berhasil diperbarui",
+      data: peserta,
+    });
+  } catch (error) {
+    console.error("❌ Error update status peserta:", error);
+    res.status(500).json({
+      message: "Gagal mengubah status peserta",
+      error: error.message,
+    });
   }
 };
