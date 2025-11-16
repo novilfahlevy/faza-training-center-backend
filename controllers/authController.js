@@ -1,8 +1,10 @@
+// /home/novilfahlevy/Projects/faza-training-center-backend/controllers/authController.js
 const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
-const { Pengguna, DataPeserta, DataMitra } = require('../models'); // 🔹 Impor model baru
+const { Pengguna, DataPeserta, DataMitra } = require('../models');
 const Env = require('../config/env');
 
+// Login untuk admin dan mitra
 exports.login = async (req, res) => {
   try {
     const { email, password } = req.body;
@@ -12,8 +14,9 @@ exports.login = async (req, res) => {
       return res.status(401).json({ message: 'Email atau password salah' });
     }
 
-    if (pengguna.role == 'peserta') {
-      return res.status(401).json({ message: 'Email atau password salah' });
+    // Hanya admin dan mitra yang bisa login melalui endpoint ini
+    if (pengguna.role === 'peserta') {
+      return res.status(401).json({ message: 'Gunakan endpoint /peserta/login untuk login sebagai peserta' });
     }
 
     const isPasswordValid = await bcrypt.compare(password, pengguna.password_hash);
@@ -41,6 +44,7 @@ exports.login = async (req, res) => {
   }
 };
 
+// Login khusus untuk peserta
 exports.loginPeserta = async (req, res) => {
   try {
     const { email, password } = req.body;
@@ -53,11 +57,12 @@ exports.loginPeserta = async (req, res) => {
         attributes: ['nama_lengkap']
       }]
     });
+    
     if (!pengguna) {
       return res.status(401).json({ message: 'Email atau password salah' });
     }
 
-    if (pengguna.role != 'peserta') {
+    if (pengguna.role !== 'peserta') {
       return res.status(401).json({ message: 'Email atau password salah.' });
     }
 
@@ -87,12 +92,13 @@ exports.loginPeserta = async (req, res) => {
   }
 };
 
+// Registrasi pengguna baru
 exports.register = async (req, res) => {
   try {
     const { email, password, role, ...dataDiri } = req.body;
     const hashedPassword = await bcrypt.hash(password, 10);
 
-    // 1. Buat pengguna baru
+    // Buat pengguna baru
     const newPengguna = await Pengguna.create({
       email,
       password_hash: hashedPassword,
@@ -101,7 +107,7 @@ exports.register = async (req, res) => {
 
     let dataTambahan = null;
 
-    // 2. Jika role 'peserta', buat data_peserta
+    // Jika role 'peserta', buat data_peserta
     if (role === 'peserta') {
       const newDataPeserta = await DataPeserta.create({
         ...dataDiri,
@@ -109,7 +115,7 @@ exports.register = async (req, res) => {
       });
       dataTambahan = newDataPeserta;
     } 
-    // 3. Jika role 'mitra', buat data_mitra
+    // Jika role 'mitra', buat data_mitra
     else if (role === 'mitra') {
       const newDataMitra = await DataMitra.create({
         ...dataDiri,
@@ -122,7 +128,7 @@ exports.register = async (req, res) => {
       message: 'Registrasi berhasil',
       data: {
         pengguna: { user_id: newPengguna.pengguna_id, email: newPengguna.email, role: newPengguna.role },
-        [role]: dataTambahan, // Kembalikan data_peserta atau data_mitra
+        [role]: dataTambahan,
       },
     });
   } catch (error) {

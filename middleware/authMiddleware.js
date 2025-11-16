@@ -1,35 +1,38 @@
+// /home/novilfahlevy/Projects/faza-training-center-backend/middleware/authMiddleware.js
 const jwt = require('jsonwebtoken');
 const { Pengguna } = require('../models');
 const Env = require('../config/env');
 
-const authMiddleware = async (req, res, next) => {
+// Middleware untuk autentikasi
+exports.authMiddleware = async (req, res, next) => {
   try {
     const token = req.header('Authorization')?.replace('Bearer ', '');
-
+    
     if (!token) {
-      return res.status(401).json({ message: 'Akses ditolak, token tidak ada.' });
+      return res.status(401).json({ message: 'Akses ditolak. Token tidak disediakan.' });
     }
 
     const decoded = jwt.verify(token, Env.JWT_SECRET);
-    const user = await Pengguna.findByPk(decoded.user_id);
-
-    if (!user) {
+    
+    const pengguna = await Pengguna.findByPk(decoded.user_id, {
+      attributes: { exclude: ['password_hash'] }
+    });
+    
+    if (!pengguna) {
       return res.status(401).json({ message: 'Token tidak valid.' });
     }
 
-    req.user = user;
+    req.user = pengguna;
     next();
   } catch (error) {
     res.status(401).json({ message: 'Token tidak valid.' });
   }
 };
 
-// Middleware untuk memeriksa role admin
-const adminMiddleware = (req, res, next) => {
+// Middleware untuk admin
+exports.adminMiddleware = (req, res, next) => {
   if (req.user.role !== 'admin') {
-    return res.status(403).json({ message: 'Akses ditolak, hanya untuk admin.' });
+    return res.status(403).json({ message: 'Akses ditolak. Hanya admin yang diizinkan.' });
   }
   next();
 };
-
-module.exports = { authMiddleware, adminMiddleware };

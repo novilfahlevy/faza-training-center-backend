@@ -1,4 +1,4 @@
-const Env = require("../config/env");
+const Env = require("../../../config/env");
 
 function makeStatusPendaftaranResponse(data) {
   return {

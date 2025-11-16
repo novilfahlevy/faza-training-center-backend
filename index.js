@@ -16,25 +16,21 @@ app.use(express.urlencoded({ extended: true }));
 // Serve file statis
 app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
 
-// Route utama
-app.get('/', (req, res) => {
-  res.json({ message: 'Selamat datang di API Faza Training Center 🚀' });
-});
-
 // Gunakan routes API
 app.use('/api/v1', routes);
+
+// Route utama
+app.get('/', (req, res) => res.json({ message: 'Selamat datang di API Faza Training Center 🚀' }));
 
 // Koneksi ke database
 (async () => {
   try {
     await db.authenticate();
-    console.log('✅ Database berhasil terkoneksi dan tabel siap.');
+    console.log('✅ Database berhasil terkoneksi.');
     await db.sync();
   } catch (err) {
-    console.error('❌ Unable to connect to the database:', err);
+    console.error('❌ Koneksi database gagal:', err);
   }
 })();
 
-app.listen(PORT, () => {
-  console.log(`🚀 Server berjalan di http://localhost:${PORT}`);
-});
+app.listen(PORT, () => console.log(`🚀 Server berjalan di http://localhost:${PORT}`));

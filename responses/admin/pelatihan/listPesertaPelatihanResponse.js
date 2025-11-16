@@ -1,6 +1,6 @@
-const Env = require("../config/env");
+const Env = require("../../../config/env");
 
-function makePesertaPelatihanListRequest(data) {
+function makeListPesertaPelatihanResponse(data) {
   return {
     id: data.id,
     pelatihan_id: data.pelatihan_id,
@@ -14,4 +14,4 @@ function makePesertaPelatihanListRequest(data) {
   };
 }
 
-module.exports = makePesertaPelatihanListRequest;
+module.exports = makeListPesertaPelatihanResponse;

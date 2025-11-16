@@ -1,40 +1,69 @@
 const bcrypt = require('bcryptjs');
-const { Pengguna, DataPeserta, DataMitra } = require('../models'); // 🔹 Model baru
-const { getPagination, getPagingData } = require('../utils/pagination');
+const { Pengguna, DataPeserta, DataMitra } = require('../../models');
+const { getPagination, getPagingData } = require('../../utils/pagination');
 const { Op } = require("sequelize");
+const makeListPenggunaResponse = require('../../responses/admin/pengguna/listPenggunaResponse');
+const makeDetailPenggunaResponse = require('../../responses/admin/pengguna/detailPenggunaResponse');
 
 // CREATE (Untuk admin membuat user)
 exports.createPengguna = async (req, res) => {
   try {
-    const { email, password, role } = req.body;
+    // Pisahkan data umum pengguna dari data spesifik role
+    const { email, password, role, ...dataRole } = req.body;
     const hashedPassword = await bcrypt.hash(password, 10);
 
+    // Buat data pengguna utama
     const newPengguna = await Pengguna.create({
       email,
       password_hash: hashedPassword,
       role,
     });
 
-    const newDataMitra = await DataMitra.create({
-      pengguna_id: newPengguna.pengguna_id,
-      nama_mitra: req.body.nama_mitra,
-      deskripsi_mitra: req.body.deskripsi_mitra,
-      alamat_mitra: req.body.alamat_mitra,
-      telepon_mitra: req.body.telepon_mitra,
-      website_mitra: req.body.website_mitra,
-    })
+    let dataTambahan = null;
+
+    // Jika role 'peserta', buat data_peserta dengan data yang relevan
+    if (role === 'peserta') {
+      const newDataPeserta = await DataPeserta.create({
+        ...dataRole, // Hanya field peserta yang akan masuk sini
+        pengguna_id: newPengguna.pengguna_id,
+      });
+      dataTambahan = newDataPeserta;
+    } 
+    // Jika role 'mitra', buat data_mitra dengan data yang relevan
+    else if (role === 'mitra') {
+      const newDataMitra = await DataMitra.create({
+        ...dataRole, // Hanya field mitra yang akan masuk sini
+        pengguna_id: newPengguna.pengguna_id,
+      });
+      dataTambahan = newDataMitra;
+    }
 
     res.status(201).json({
       message: "Pengguna berhasil dibuat",
       data: {
-        pengguna_id: newPengguna.pengguna_id,
-        email: newPengguna.email,
-        role: newPengguna.role,
-        ...newDataMitra
+        pengguna: { user_id: newPengguna.pengguna_id, email: newPengguna.email, role: newPengguna.role },
+        [role]: dataTambahan,
       },
     });
   } catch (error) {
     console.error("❌ Gagal membuat pengguna:", error);
+    
+    // Tangani error validasi Sequelize (misal: email unique)
+    if (error.name === 'SequelizeUniqueConstraintError') {
+      return res.status(400).json({
+        message: "Email sudah digunakan. Silakan gunakan email lain.",
+        error: error.message,
+      });
+    }
+    
+    // Tangani error validasi Yup (jika sampai ke sini)
+    if (error.name === 'SequelizeValidationError') {
+      return res.status(400).json({
+        message: "Data tidak valid. Periksa kembali input Anda.",
+        error: error.message,
+      });
+    }
+
     res.status(500).json({
       message: "Gagal membuat pengguna",
       error: error.message,
@@ -45,10 +74,10 @@ exports.createPengguna = async (req, res) => {
 // READ (All)
 exports.getAllPengguna = async (req, res) => {
   try {
-    const { page = 0, size = 10, search = "" } = req.query;
+    const { page = 1, size = 10, search = "" } = req.query;
     const { limit, offset } = getPagination(page, size);
 
-    // 🔹 Kondisi pencarian diperbarui
+    // Kondisi pencarian
     let condition = {};
     if (search) {
       condition = {
@@ -74,6 +103,7 @@ exports.getAllPengguna = async (req, res) => {
       order: [["pengguna_id", "DESC"]],
     });
 
+    data.rows = data.rows.map(pengguna => makeListPenggunaResponse(pengguna));
     const response = getPagingData(data, page, limit);
     res.json(response);
   } catch (error) {
@@ -95,8 +125,10 @@ exports.getPenggunaById = async (req, res) => {
       ],
       attributes: { exclude: ['password_hash'] },
     });
+    
     if (!pengguna) return res.status(404).json({ message: 'Pengguna tidak ditemukan' });
-    res.json(pengguna);
+    
+    res.json(makeDetailPenggunaResponse(pengguna));
   } catch (error) {
     res.status(500).json({ message: 'Gagal mengambil data pengguna', error: error.message });
   }
@@ -106,28 +138,36 @@ exports.getPenggunaById = async (req, res) => {
 exports.updatePengguna = async (req, res) => {
   try {
     const { id } = req.params;
-    const { email, role } = req.body;
+    const { email, role, password, data_mitra, data_peserta } = req.body;
 
-    // 🔹 Update data pengguna
+    // Update data pengguna utama
     const pengguna = await Pengguna.findByPk(id);
     if (!pengguna) {
       return res.status(404).json({ message: "Pengguna tidak ditemukan" });
     }
-    await pengguna.update({ email, role });
 
-    // 🔹 Jika pengguna adalah mitra, update juga tabel DataMitra
-    if (role === "mitra") {
+    const updateData = { email, role };
+    
+    // Update password jika disediakan
+    if (password) {
+      updateData.password_hash = await bcrypt.hash(password, 10);
+    }
+    
+    await pengguna.update(updateData);
+
+    // Jika pengguna adalah mitra, update juga tabel DataMitra
+    if (role === "mitra" && data_mitra) {
       const existingMitra = await DataMitra.findOne({ where: { pengguna_id: id } });
       if (existingMitra) {
-        await existingMitra.update(req.body.data_mitra); // Asumsi data_mitra dikirim di body
+        await existingMitra.update(data_mitra);
       }
     }
     
-    // 🔹 Jika pengguna adalah peserta, update juga tabel DataPeserta
-    if (role === "peserta") {
+    // Jika pengguna adalah peserta, update juga tabel DataPeserta
+    if (role === "peserta" && data_peserta) {
       const existingPeserta = await DataPeserta.findOne({ where: { pengguna_id: id } });
       if (existingPeserta) {
-        await existingPeserta.update(req.body.data_peserta); // Asumsi data_peserta dikirim
+        await existingPeserta.update(data_peserta);
       }
     }
 
@@ -136,6 +176,23 @@ exports.updatePengguna = async (req, res) => {
     });
   } catch (error) {
     console.error("❌ Gagal memperbarui data pengguna:", error);
+    
+    // Tangani error validasi Sequelize (misal: email unique)
+    if (error.name === 'SequelizeUniqueConstraintError') {
+      return res.status(400).json({
+        message: "Email sudah digunakan. Silakan gunakan email lain.",
+        error: error.message,
+      });
+    }
+
+    // Tangani error validasi lainnya
+    if (error.name === 'SequelizeValidationError') {
+      return res.status(400).json({
+        message: "Data tidak valid. Periksa kembali input Anda.",
+        error: error.message,
+      });
+    }
+
     res.status(500).json({
       message: "Gagal memperbarui data pengguna",
       error: error.message,

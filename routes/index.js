@@ -1,21 +1,21 @@
-// routes/index.js
+// /home/novilfahlevy/Projects/faza-training-center-backend/routes/index.js
 const express = require('express');
 const router = express.Router();
 
 // Import semua route
-const authRoutes = require('./auth');
-const penggunaRoutes = require('./pengguna');
-const dataPesertaRoutes = require('./dataPeserta'); // 🔹 Nama route baru
-const dataMitraRoutes = require('./dataMitra'); // 🔹 Nama route baru
-const pelatihanRoutes = require('./pelatihan'); // 🔹 Nama route baru
-const laporanKegiatanRoutes = require('./laporanKegiatan');
+const authRoutes = require('./authRoutes');
+const adminPenggunaRoutes = require('./admin/penggunaRoutes');
+const adminPelatihanRoutes = require('./admin/pelatihanRoutes');
+const adminMitraRoutes = require('./admin/mitraRoutes');
+const mainProfileRoutes = require('./main/profileRoutes');
+const mainPelatihanRoutes = require('./main/pelatihanRoutes');
 
 // Gunakan route dengan prefix masing-masing
 router.use('/auth', authRoutes);
-router.use('/pengguna', penggunaRoutes);
-router.use('/data-peserta', dataPesertaRoutes); // 🔹 Prefix baru
-router.use('/data-mitra', dataMitraRoutes); // 🔹 Prefix baru
-router.use('/pelatihan', pelatihanRoutes); // 🔹 Prefix baru
-router.use('/laporan', laporanKegiatanRoutes);
+router.use('/admin/pengguna', adminPenggunaRoutes);
+router.use('/admin/pelatihan', adminPelatihanRoutes);
+router.use('/admin/mitra', adminMitraRoutes);
+router.use('/profile', mainProfileRoutes);
+router.use('/pelatihan', mainPelatihanRoutes);
 
 module.exports = router;
