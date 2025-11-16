@@ -9,7 +9,10 @@ exports.authMiddleware = async (req, res, next) => {
     const token = req.header('Authorization')?.replace('Bearer ', '');
     
     if (!token) {
-      return res.status(401).json({ message: 'Akses ditolak. Token tidak disediakan.' });
+      return res.status(401).json({
+        message: 'Akses ditolak. Token tidak disediakan.',
+        state: 'NOT_AUTHORIZED'
+      });
     }
 
     const decoded = jwt.verify(token, Env.JWT_SECRET);
@@ -19,20 +22,29 @@ exports.authMiddleware = async (req, res, next) => {
     });
     
     if (!pengguna) {
-      return res.status(401).json({ message: 'Token tidak valid.' });
+      return res.status(401).json({
+        message: 'Token tidak valid.',
+        state: 'NOT_AUTHORIZED'
+      });
     }
 
     req.user = pengguna;
     next();
   } catch (error) {
-    res.status(401).json({ message: 'Token tidak valid.' });
+    res.status(401).json({
+      message: 'Token tidak valid.',
+      state: 'NOT_AUTHORIZED'
+    });
   }
 };
 
 // Middleware untuk admin
 exports.adminMiddleware = (req, res, next) => {
   if (req.user.role !== 'admin') {
-    return res.status(403).json({ message: 'Akses ditolak. Hanya admin yang diizinkan.' });
+    return res.status(403).json({
+      message: 'Akses ditolak. Hanya admin yang diizinkan.',
+      state: 'NOT_AUTHORIZED'
+    });
   }
   next();
 };
