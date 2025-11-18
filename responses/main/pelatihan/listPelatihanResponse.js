@@ -4,6 +4,8 @@ function makeListPelatihanResponse(data) {
   return data.map(item => ({
     pelatihan_id: item.pelatihan_id,
     nama_pelatihan: item.nama_pelatihan,
+    biaya_pelatihan: item.biaya,
+    daring: item.daring,
     slug_pelatihan: item.slug_pelatihan,
     lokasi_pelatihan: item.lokasi_pelatihan,
     tanggal_pelatihan: item.tanggal_pelatihan,

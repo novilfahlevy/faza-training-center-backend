@@ -79,6 +79,16 @@ exports.createPelatihan = async (req, res) => {
       req.body.slug_pelatihan = generateSlug(req.body.nama_pelatihan);
     }
 
+    // Pastikan nilai boolean untuk daring
+    if (req.body.daring !== undefined) {
+      req.body.daring = req.body.daring === 'true' || req.body.daring === true;
+    }
+
+    // Konversi biaya ke integer
+    if (req.body.biaya !== undefined) {
+      req.body.biaya = parseInt(req.body.biaya) || 0;
+    }
+
     const newPelatihan = await Pelatihan.create(req.body);
 
     if (thumbnail_id) {
@@ -181,6 +191,16 @@ exports.updatePelatihan = async (req, res) => {
 
     if (bodyWithoutThumbnail.nama_pelatihan) {
       bodyWithoutThumbnail.slug_pelatihan = generateSlug(bodyWithoutThumbnail.nama_pelatihan);
+    }
+
+    // Pastikan nilai boolean untuk daring
+    if (bodyWithoutThumbnail.daring !== undefined) {
+      bodyWithoutThumbnail.daring = bodyWithoutThumbnail.daring === 'true' || bodyWithoutThumbnail.daring === true;
+    }
+
+    // Konversi biaya ke integer
+    if (bodyWithoutThumbnail.biaya !== undefined) {
+      bodyWithoutThumbnail.biaya = parseInt(bodyWithoutThumbnail.biaya) || 0;
     }
 
     await existingPelatihan.update(bodyWithoutThumbnail);

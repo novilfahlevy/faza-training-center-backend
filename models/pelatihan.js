@@ -15,6 +15,28 @@ const Pelatihan = db.define('pelatihan', { // 🔹 Nama model dan tabel diubah
   tanggal_pelatihan: { type: DataTypes.DATE },
   durasi_pelatihan: { type: DataTypes.STRING },
   lokasi_pelatihan: { type: DataTypes.STRING },
+  biaya: { 
+    type: DataTypes.INTEGER,
+    allowNull: true,
+    defaultValue: 0
+  },
+  daring: { 
+    type: DataTypes.BOOLEAN,
+    allowNull: true,
+    defaultValue: false
+  },
+  link_daring: { 
+    type: DataTypes.STRING,
+    allowNull: true
+  },
+  nomor_rekening: { 
+    type: DataTypes.STRING,
+    allowNull: true
+  },
+  nama_bank: { 
+    type: DataTypes.STRING,
+    allowNull: true
+  },
   mitra_id: {
     type: DataTypes.INTEGER,
     allowNull: true,
