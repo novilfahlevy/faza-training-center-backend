@@ -1,0 +1,7 @@
+/bukti_pembayaran
+/thumbnails
+/tmp
+
+/bukti_pembayaran/*
+/thumbnails/*
+/tmp/*

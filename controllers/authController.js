@@ -16,7 +16,7 @@ exports.login = async (req, res) => {
 
     // Hanya admin dan mitra yang bisa login melalui endpoint ini
     if (pengguna.role === 'peserta') {
-      return res.status(401).json({ message: 'Gunakan endpoint /peserta/login untuk login sebagai peserta' });
+      return res.status(401).json({ message: 'Email atau password salah' });
     }
 
     const isPasswordValid = await bcrypt.compare(password, pengguna.password_hash);
