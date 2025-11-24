@@ -7,6 +7,7 @@ const authRoutes = require('./authRoutes');
 const adminPenggunaRoutes = require('./admin/penggunaRoutes');
 const adminPelatihanRoutes = require('./admin/pelatihanRoutes');
 const adminMitraRoutes = require('./admin/mitraRoutes');
+const adminDashboardRoutes = require('./admin/dashboardRoutes');
 const mainProfileRoutes = require('./main/profileRoutes');
 const mainPelatihanRoutes = require('./main/pelatihanRoutes');
 
@@ -15,6 +16,7 @@ router.use('/auth', authRoutes);
 router.use('/admin/pengguna', adminPenggunaRoutes);
 router.use('/admin/pelatihan', adminPelatihanRoutes);
 router.use('/admin/mitra', adminMitraRoutes);
+router.use('/admin/dashboard', adminDashboardRoutes);
 router.use('/profile', mainProfileRoutes);
 router.use('/pelatihan', mainPelatihanRoutes);
 
