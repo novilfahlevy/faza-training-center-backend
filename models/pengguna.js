@@ -17,8 +17,22 @@ const Pengguna = db.define('pengguna', {
     allowNull: false,
   },
   role: {
-    type: DataTypes.ENUM('admin', 'mitra', 'peserta'), // 🔹 Enum diperbarui
+    type: DataTypes.ENUM('admin', 'mitra', 'peserta'),
     allowNull: false,
+  },
+  // 🔹 Tambahkan kolom untuk verifikasi email
+  is_verified: {
+    type: DataTypes.BOOLEAN,
+    defaultValue: false, // Default belum terverifikasi
+    allowNull: false,
+  },
+  email_verification_token: {
+    type: DataTypes.STRING,
+    allowNull: true, // Boleh null setelah verifikasi berhasil
+  },
+  verified_at: { // Opsional: untuk mencatat waktu verifikasi
+    type: DataTypes.DATE,
+    allowNull: true,
   },
 }, {
   tableName: 'pengguna',

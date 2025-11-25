@@ -8,4 +8,6 @@ router.post('/admin/login', authController.login);
 router.post('/login', authController.loginPeserta);
 router.post('/register', authController.register);
 
+router.get('/verify-email', authController.verifyEmail);
+
 module.exports = router;
