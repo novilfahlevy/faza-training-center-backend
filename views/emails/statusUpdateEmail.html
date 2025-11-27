@@ -1,0 +1,136 @@
+<!DOCTYPE html>
+<html lang="id">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Update Status Pendaftaran</title>
+    <style>
+      body {
+        font-family: Arial, sans-serif;
+        background-color: #f4f4f4;
+        margin: 0;
+        padding: 0;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        min-height: 100vh;
+      }
+      .email-container {
+        background-color: #ffffff;
+        padding: 20px 30px;
+        border-radius: 8px;
+        box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+        max-width: 600px;
+        text-align: center;
+        margin: 20px;
+      }
+      .header h2 {
+        color: #333;
+        margin-bottom: 10px;
+      }
+      .content p {
+        color: #666;
+        line-height: 1.6;
+        text-align: left;
+      }
+      .status-update-box {
+        background-color: #f9f9f9;
+        border-left: 5px solid #007bff;
+        padding: 15px;
+        margin: 20px 0;
+        text-align: left;
+      }
+      .status-update-box p {
+        margin: 5px 0;
+      }
+      .status-badge {
+        display: inline-block;
+        padding: 5px 12px;
+        border-radius: 20px;
+        font-weight: bold;
+        font-size: 0.9em;
+        margin-top: 5px;
+      }
+      .status-pending {
+        background-color: #fff3cd;
+        color: #856404;
+      }
+      .status-terdaftar {
+        background-color: #d4edda;
+        color: #155724;
+      }
+      .status-selesai {
+        background-color: #cce5ff;
+        color: #004085;
+      }
+      .action-button {
+        display: inline-block;
+        background-color: #007bff;
+        color: #ffffff;
+        padding: 12px 25px;
+        text-decoration: none;
+        border-radius: 5px;
+        font-weight: bold;
+        margin: 20px 0;
+        transition: background-color 0.3s ease;
+      }
+      .action-button:hover {
+        background-color: #0056b3;
+      }
+      .footer {
+        margin-top: 20px;
+        font-size: 0.9em;
+        color: #999;
+      }
+      .footer a {
+        color: #007bff;
+        text-decoration: none;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="email-container">
+      <div class="header">
+        <h2>Update Status Pendaftaran Pelatihan</h2>
+      </div>
+      <div class="content">
+        <p>Halo <strong>{{userName}}</strong>,</p>
+        <p>
+          Kami ingin memberitahukan bahwa status pendaftaran Anda untuk
+          pelatihan berikut telah diperbarui:
+        </p>
+
+        <div class="status-update-box">
+          <h3>{{trainingName}}</h3>
+          <p>
+            <strong>Status Sebelumnya:</strong>
+            <span class="status-badge status-{{oldStatusClass}}"
+              >{{oldStatusText}}</span
+            >
+          </p>
+          <p>
+            <strong>Status Terkini:</strong>
+            <span class="status-badge status-{{newStatusClass}}"
+              >{{newStatusText}}</span
+            >
+          </p>
+        </div>
+
+        <p>{{statusMessage}}</p>
+
+        <a href="{{trainingUrl}}" class="action-button"
+          >Lihat Detail Pelatihan</a
+        >
+
+        <p>Terima kasih atas kepercayaan Anda kepada Faza Training Center.</p>
+      </div>
+      <div class="footer">
+        <p>&copy; 2024 Faza Training Center. All rights reserved.</p>
+        <p>
+          Jika Anda memiliki pertanyaan, silakan hubungi kami di
+          <a href="mailto:info@fazatraining.com">info@fazatraining.com</a>
+        </p>
+      </div>
+    </div>
+  </body>
+</html>

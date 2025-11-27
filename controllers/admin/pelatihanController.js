@@ -1,4 +1,4 @@
-const { Pelatihan, Pengguna, ThumbnailTemporary, DataMitra } = require("../../models");
+const { Pelatihan, Pengguna, ThumbnailTemporary, DataMitra, PesertaPelatihan, DataPeserta } = require("../../models");
 const { getPagination, getPagingData } = require("../../utils/pagination");
 const createSearchCondition = require("../../utils/searchConditions");
 const path = require("path");
@@ -7,6 +7,7 @@ const multer = require("multer");
 const Env = require("../../config/env");
 const makeListPelatihanResponse = require("../../responses/admin/pelatihan/listPelatihanResponse");
 const makeDetailPelatihanResponse = require("../../responses/admin/pelatihan/detailPelatihanResponse");
+const { sendStatusUpdateEmail } = require("../../config/email");
 
 const tmpDir = path.join(__dirname, "../../uploads/tmp");
 const finalDir = path.join(__dirname, "../../uploads/thumbnails");
@@ -275,15 +276,52 @@ exports.updatePesertaStatus = async (req, res) => {
       });
     }
 
-    const { PesertaPelatihan } = require('../../models');
-    const peserta = await PesertaPelatihan.findByPk(pesertaPelatihanId);
+    // Cari data peserta beserta relasi yang dibutuhkan untuk email
+    const peserta = await PesertaPelatihan.findByPk(pesertaPelatihanId, {
+      include: [
+        {
+          model: Pengguna,
+          as: "peserta",
+          include: [
+            {
+              model: DataPeserta,
+              as: 'data_peserta'
+            }
+          ]
+        },
+        {
+          model: Pelatihan,
+          as: "pelatihan"
+        }
+      ]
+    });
 
     if (!peserta) {
       return res.status(404).json({ message: "Peserta tidak ditemukan" });
     }
 
+    // Simpan status lama sebelum diupdate
+    const oldStatus = peserta.status_pendaftaran;
+
+    // Update status di database
     peserta.status_pendaftaran = status_pendaftaran;
     await peserta.save();
+
+    try {
+      // Ambil nama peserta, fallback ke email jika nama tidak ada
+      const userName = peserta.peserta.data_peserta?.nama_lengkap || peserta.peserta.email;
+
+      await sendStatusUpdateEmail(
+        peserta.peserta,        // Data Pengguna
+        peserta.pelatihan,      // Data Pelatihan
+        oldStatus,              // Status Lama
+        status_pendaftaran,     // Status Baru
+        userName                // Nama Peserta
+      );
+    } catch (emailError) {
+      // Jika email gagal, log error tapi tidak gagalkan proses update status
+      console.error("❌ Gagal mengirim email notifikasi update status:", emailError);
+    }
 
     res.status(200).json({
       message: "Status peserta berhasil diperbarui",

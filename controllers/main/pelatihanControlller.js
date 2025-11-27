@@ -1,10 +1,12 @@
-const { Pelatihan, Pengguna, DataMitra, PesertaPelatihan } = require("../../models");
+// /home/novilfahlevy/Projects/faza-training-center-backend/controllers/main/pelatihanControlller.js
+const { Pelatihan, Pengguna, DataMitra, PesertaPelatihan, DataPeserta } = require("../../models");
 const { getPagination, getPagingData } = require("../../utils/pagination");
 const createSearchCondition = require("../../utils/searchConditions");
 const path = require("path");
 const fs = require("fs");
 const multer = require("multer");
 const Env = require("../../config/env");
+const { sendTrainingRegistrationEmail } = require("../../config/email"); // Tambahkan import ini
 
 const makeStatusPendaftaranResponse = require("../../responses/main/pelatihan/statusPendaftaranResponse");
 const makeListPelatihanResponse = require("../../responses/main/pelatihan/listPelatihanResponse");
@@ -24,7 +26,6 @@ const upload = multer({
   storage,
   limits: { fileSize: 5 * 1024 * 1024 }, // 5MB
 }).single("bukti_pembayaran");
-
 
 // READ (All) - Endpoint publik untuk daftar pelatihan
 exports.getAllPelatihan = async (req, res) => {
@@ -159,6 +160,16 @@ exports.registerForTraining = (req, res) => {
         return res.status(400).json({ message: "Anda sudah terdaftar di pelatihan ini" });
       }
 
+      // Dapatkan data pengguna untuk email
+      const pengguna = await Pengguna.findByPk(pengguna_id);
+      if (!pengguna) {
+        return res.status(404).json({ message: "Pengguna tidak ditemukan" });
+      }
+
+      // Dapatkan data peserta untuk nama
+      const dataPeserta = await DataPeserta.findOne({ where: { pengguna_id } });
+      const userName = dataPeserta ? dataPeserta.nama_lengkap : pengguna.email;
+
       // Simpan ke DB
       const peserta = await PesertaPelatihan.create({
         pengguna_id,
@@ -171,6 +182,14 @@ exports.registerForTraining = (req, res) => {
       const bukti_url = bukti_pembayaran_filename
         ? `${Env.APP_URL.replace(/\/$/, "")}${bukti_pembayaran_filename}`
         : null;
+
+      // Kirim email notifikasi pendaftaran
+      try {
+        await sendTrainingRegistrationEmail(pengguna, pelatihan, peserta, userName);
+      } catch (emailError) {
+        console.error("Gagal mengirim email notifikasi pendaftaran:", emailError);
+        // Lanjutkan proses meskipun email gagal dikirim
+      }
 
       return res.status(201).json({
         message: "Pendaftaran pelatihan berhasil",

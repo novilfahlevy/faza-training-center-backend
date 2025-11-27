@@ -1,0 +1,120 @@
+<!DOCTYPE html>
+<html lang="id">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Konfirmasi Pendaftaran Pelatihan</title>
+    <style>
+      body {
+        font-family: Arial, sans-serif;
+        background-color: #f4f4f4;
+        margin: 0;
+        padding: 0;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        min-height: 100vh;
+      }
+      .email-container {
+        background-color: #ffffff;
+        padding: 20px 30px;
+        border-radius: 8px;
+        box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+        max-width: 600px;
+        text-align: center;
+        margin: 20px;
+      }
+      .header h2 {
+        color: #333;
+        margin-bottom: 10px;
+      }
+      .content p {
+        color: #666;
+        line-height: 1.6;
+        text-align: left;
+      }
+      .training-details {
+        background-color: #f9f9f9;
+        border-radius: 5px;
+        padding: 15px;
+        margin: 20px 0;
+        text-align: left;
+      }
+      .training-details h3 {
+        margin-top: 0;
+        color: #007bff;
+      }
+      .training-details p {
+        margin: 5px 0;
+      }
+      .status-badge {
+        display: inline-block;
+        padding: 5px 10px;
+        border-radius: 4px;
+        font-weight: bold;
+        margin-top: 10px;
+      }
+      .status-pending {
+        background-color: #fff3cd;
+        color: #856404;
+      }
+      .status-confirmed {
+        background-color: #d4edda;
+        color: #155724;
+      }
+      .action-button {
+        display: inline-block;
+        background-color: #007bff;
+        color: #ffffff;
+        padding: 12px 25px;
+        text-decoration: none;
+        border-radius: 5px;
+        font-weight: bold;
+        margin: 20px 0;
+        transition: background-color 0.3s ease;
+      }
+      .action-button:hover {
+        background-color: #0056b3;
+      }
+      .footer {
+        margin-top: 20px;
+        font-size: 0.9em;
+        color: #999;
+      }
+      .footer a {
+        color: #007bff;
+        text-decoration: none;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="email-container">
+      <div class="header">
+        <h2>Konfirmasi Pendaftaran Pelatihan</h2>
+      </div>
+      <div class="content">
+        <p>Halo <strong>{{userName}}</strong>,</p>
+        <p>Terima kasih telah mendaftar untuk pelatihan kami. Berikut adalah detail pendaftaran Anda:</p>
+        
+        <div class="training-details">
+          <h3>{{trainingName}}</h3>
+          <p><strong>Tanggal Pelatihan:</strong> {{trainingDate}}</p>
+          <p><strong>Durasi:</strong> {{trainingDuration}}</p>
+          <p><strong>Lokasi:</strong> {{trainingLocation}}</p>
+          <p><strong>Tanggal Pendaftaran:</strong> {{registrationDate}}</p>
+          <div class="status-badge status-{{statusClass}}">Status: {{registrationStatus}}</div>
+        </div>
+        
+        <p>{{statusMessage}}</p>
+        
+        <a href="{{trainingUrl}}" class="action-button">Lihat Detail Pelatihan</a>
+        
+        <p>Anda dapat memeriksa status pendaftaran Anda kapan saja melalui akun Anda di website kami.</p>
+      </div>
+      <div class="footer">
+        <p>&copy; 2024 Faza Training Center. All rights reserved.</p>
+        <p>Jika Anda memiliki pertanyaan, silakan hubungi kami di <a href="mailto:info@fazatraining.com">info@fazatraining.com</a></p>
+      </div>
+    </div>
+  </body>
+</html>
