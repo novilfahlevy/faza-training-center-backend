@@ -37,14 +37,7 @@ const Pelatihan = db.define('pelatihan', { // 🔹 Nama model dan tabel diubah
     type: DataTypes.STRING,
     allowNull: true
   },
-  mitra_id: {
-    type: DataTypes.INTEGER,
-    allowNull: true,
-    references: { // 🔹 Referensi ke tabel pengguna
-      model: Pengguna,
-      key: 'pengguna_id',
-    },
-  },
+  // Hapus mitra_id karena akan menggunakan tabel junction
 }, {
   tableName: 'pelatihan', // 🔹 Nama tabel diubah
   timestamps: false,

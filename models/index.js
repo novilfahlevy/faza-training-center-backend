@@ -1,3 +1,4 @@
+// /home/novilfahlevy/Projects/faza-training-center-backend/models/index.js
 const db = require('../config/database');
 
 // 🔹 Impor semua model yang baru/direvisi
@@ -8,6 +9,7 @@ const Pelatihan = require('./pelatihan');
 const LaporanKegiatan = require('./laporanKegiatan');
 const PesertaPelatihan = require('./pesertaPelatihan');
 const ThumbnailTemporary = require('./thumbnailTemporary');
+const PelatihanMitra = require('./pelatihanMitra'); // Tambahkan model baru
 
 // 🔹 Definisikan semua asosiasi
 
@@ -32,20 +34,7 @@ DataMitra.belongsTo(Pengguna, {
   as: 'pengguna'
 });
 
-
 // --- Asosiasi One-to-Many ---
-// Satu Pengguna (sebagai mitra) bisa mengajar banyak Pelatihan
-Pengguna.hasMany(Pelatihan, {
-  foreignKey: 'mitra_id',
-  as: 'pelatihan_diajar' // Alias: pengguna.getPelatihanDiajar()
-});
-
-// Satu Pelatihan diajarkan oleh satu Pengguna (sebagai mitra)
-Pelatihan.belongsTo(Pengguna, {
-  foreignKey: 'mitra_id',
-  as: 'mitra' // Alias: pelatihan.getMitra()
-});
-
 // Satu Pengguna bisa meng-upload banyak LaporanKegiatan
 Pengguna.hasMany(LaporanKegiatan, {
   foreignKey: 'pengguna_id',
@@ -57,7 +46,6 @@ LaporanKegiatan.belongsTo(Pengguna, {
   foreignKey: 'pengguna_id',
   as: 'uploader' // Alias: laporanKegiatan.getUploader()
 });
-
 
 // --- Asosiasi Many-to-Many ---
 // Satu Pengguna (sebagai peserta) bisa mendaftar ke banyak Pelatihan
@@ -74,6 +62,34 @@ Pelatihan.belongsToMany(Pengguna, {
   foreignKey: 'pelatihan_id',
   otherKey: 'pengguna_id',
   as: 'peserta_terdaftar' // Alias: pelatihan.getPesertaTerdaftar()
+});
+
+// --- Asosiasi Many-to-Many untuk Mitra ---
+// Satu Pelatihan bisa memiliki banyak Mitra
+Pelatihan.belongsToMany(Pengguna, {
+  through: PelatihanMitra,
+  foreignKey: 'pelatihan_id',
+  otherKey: 'pengguna_id',
+  as: 'mitra_pelatihan' // Alias: pelatihan.getMitraPelatihan()
+});
+
+// Satu Pengguna (sebagai mitra) bisa terlibat dalam banyak Pelatihan
+Pengguna.belongsToMany(Pelatihan, {
+  through: PelatihanMitra,
+  foreignKey: 'pengguna_id',
+  otherKey: 'pelatihan_id',
+  as: 'pelatihan_sebagai_mitra' // 🔹 PERBAIKAN: Ubah alias agar unik
+});
+
+// Asosiasi untuk tabel junction
+PelatihanMitra.belongsTo(Pelatihan, {
+  foreignKey: 'pelatihan_id',
+  as: 'pelatihan'
+});
+
+PelatihanMitra.belongsTo(Pengguna, {
+  foreignKey: 'pengguna_id',
+  as: 'pengguna'
 });
 
 PesertaPelatihan.belongsTo(Pengguna, {
@@ -99,5 +115,6 @@ module.exports = {
   Pelatihan,
   LaporanKegiatan,
   PesertaPelatihan,
-  ThumbnailTemporary
+  ThumbnailTemporary,
+  PelatihanMitra // Tambahkan model baru ke ekspor
 };

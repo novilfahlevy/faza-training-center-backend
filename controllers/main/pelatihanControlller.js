@@ -1,12 +1,12 @@
 // /home/novilfahlevy/Projects/faza-training-center-backend/controllers/main/pelatihanControlller.js
-const { Pelatihan, Pengguna, DataMitra, PesertaPelatihan, DataPeserta } = require("../../models");
+const { Pelatihan, Pengguna, DataMitra, PesertaPelatihan, DataPeserta, PelatihanMitra } = require("../../models");
 const { getPagination, getPagingData } = require("../../utils/pagination");
 const createSearchCondition = require("../../utils/searchConditions");
 const path = require("path");
 const fs = require("fs");
 const multer = require("multer");
 const Env = require("../../config/env");
-const { sendTrainingRegistrationEmail } = require("../../config/email"); // Tambahkan import ini
+const { sendTrainingRegistrationEmail } = require("../../config/email");
 
 const makeStatusPendaftaranResponse = require("../../responses/main/pelatihan/statusPendaftaranResponse");
 const makeListPelatihanResponse = require("../../responses/main/pelatihan/listPelatihanResponse");
@@ -41,11 +41,12 @@ exports.getAllPelatihan = async (req, res) => {
       offset,
       include: [{ 
         model: Pengguna, 
-        as: "mitra",
+        as: "mitra_pelatihan", // Gunakan alias yang benar
         include: [{
           model: DataMitra,
           as: 'data_mitra'
-        }]
+        }],
+        through: { attributes: ['role_mitra'] } // Sertakan atribut dari tabel junction
       }],
     });
 
@@ -70,22 +71,36 @@ exports.getPelatihanById = async (req, res) => {
     const pelatihan = await Pelatihan.findByPk(req.params.id, {
       include: [{
         model: Pengguna,
-        as: "mitra",
+        as: "mitra_pelatihan", // Gunakan alias yang benar
         include: [{
           model: DataMitra,
           as: 'data_mitra'
-        }]
+        }],
+        through: { attributes: ['role_mitra'] } // Sertakan atribut dari tabel junction
       }],
     });
 
     if (!pelatihan) return res.status(404).json({ message: "Pelatihan tidak ditemukan" });
+
+    // Proses data mitra
+    const mitraList = pelatihan.mitra_pelatihan ? pelatihan.mitra_pelatihan.map(mitra => ({
+      id: mitra.pengguna_id,
+      nama: mitra.data_mitra ? mitra.data_mitra.nama_mitra : null,
+      role: mitra.PelatihanMitra ? mitra.PelatihanMitra.role_mitra : null
+    })) : [];
 
     // Lengkapi URL dari thumbnail_url
     if (pelatihan.thumbnail_url) {
       pelatihan.thumbnail_url = `${Env.APP_URL.replace(/\/$/, "")}/${pelatihan.thumbnail_url.replace(/^\//, "")}`
     }
 
-    res.json(pelatihan);
+    // Tambahkan array mitra ke response
+    const response = {
+      ...pelatihan.dataValues,
+      mitra: mitraList
+    };
+
+    res.json(response);
   } catch (error) {
     res
       .status(500)
@@ -103,22 +118,36 @@ exports.getPelatihanBySlug = async (req, res) => {
       where: { slug_pelatihan: req.params.slug },
       include: [{
         model: Pengguna,
-        as: "mitra",
+        as: "mitra_pelatihan", // Gunakan alias yang benar
         include: [{
           model: DataMitra,
           as: 'data_mitra'
-        }]
+        }],
+        through: { attributes: ['role_mitra'] } // Sertakan atribut dari tabel junction
       }],
     });
 
     if (!pelatihan) return res.status(404).json({ message: "Pelatihan tidak ditemukan" });
+
+    // Proses data mitra
+    const mitraList = pelatihan.mitra_pelatihan ? pelatihan.mitra_pelatihan.map(mitra => ({
+      id: mitra.pengguna_id,
+      nama: mitra.data_mitra ? mitra.data_mitra.nama_mitra : null,
+      role: mitra.PelatihanMitra ? mitra.PelatihanMitra.role_mitra : null
+    })) : [];
 
     // Lengkapi URL dari thumbnail_url
     if (pelatihan.thumbnail_url) {
       pelatihan.thumbnail_url = `${Env.APP_URL.replace(/\/$/, "")}/${pelatihan.thumbnail_url.replace(/^\//, "")}`
     }
 
-    res.json(pelatihan);
+    // Tambahkan array mitra ke response
+    const response = {
+      ...pelatihan.dataValues,
+      mitra: mitraList
+    };
+
+    res.json(response);
   } catch (error) {
     res
       .status(500)

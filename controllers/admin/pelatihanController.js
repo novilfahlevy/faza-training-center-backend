@@ -1,4 +1,5 @@
-const { Pelatihan, Pengguna, ThumbnailTemporary, DataMitra, PesertaPelatihan, DataPeserta } = require("../../models");
+// /home/novilfahlevy/Projects/faza-training-center-backend/controllers/admin/pelatihanController.js
+const { Pelatihan, Pengguna, ThumbnailTemporary, DataMitra, PesertaPelatihan, DataPeserta, PelatihanMitra } = require("../../models");
 const { getPagination, getPagingData } = require("../../utils/pagination");
 const createSearchCondition = require("../../utils/searchConditions");
 const path = require("path");
@@ -74,7 +75,7 @@ exports.uploadThumbnail = [
 // CREATE
 exports.createPelatihan = async (req, res) => {
   try {
-    const { thumbnail_id } = req.body;
+    const { thumbnail_id, mitra_ids } = req.body;
 
     if (req.body.nama_pelatihan) {
       req.body.slug_pelatihan = generateSlug(req.body.nama_pelatihan);
@@ -91,6 +92,18 @@ exports.createPelatihan = async (req, res) => {
     }
 
     const newPelatihan = await Pelatihan.create(req.body);
+
+    // Tambahkan mitra jika ada
+    if (mitra_ids && mitra_ids.length > 0) {
+      const mitraArray = Array.isArray(mitra_ids) ? mitra_ids : [mitra_ids];
+      const mitraAssociations = mitraArray.map(mitra_id => ({
+        pelatihan_id: newPelatihan.pelatihan_id,
+        pengguna_id: mitra_id,
+        role_mitra: 'pemateri' // Default role
+      }));
+      
+      await PelatihanMitra.bulkCreate(mitraAssociations);
+    }
 
     if (thumbnail_id) {
       const tempThumb = await ThumbnailTemporary.findByPk(thumbnail_id);
@@ -126,14 +139,17 @@ exports.getAllPelatihan = async (req, res) => {
       where: condition,
       limit,
       offset,
-      include: [{ 
-        model: Pengguna, 
-        as: "mitra",
-        include: [{
-          model: DataMitra,
-          as: 'data_mitra'
-        }]
-      }],
+      include: [
+        { 
+          model: Pengguna, 
+          as: "mitra_pelatihan",
+          include: [{
+            model: DataMitra,
+            as: 'data_mitra'
+          }],
+          through: { attributes: ['role_mitra'] } // Sertakan atribut dari tabel junction
+        }
+      ],
     });
     
     // Format response
@@ -156,14 +172,17 @@ exports.getPelatihanById = async (req, res) => {
   try {
     const { withCompleteDataMitra = false } = req.query;
     const pelatihan = await Pelatihan.findByPk(req.params.id, {
-      include: [{
-        model: Pengguna,
-        as: "mitra",
-        include: [{
-          model: DataMitra,
-          as: 'data_mitra'
-        }]
-      }],
+      include: [
+        {
+          model: Pengguna,
+          as: "mitra_pelatihan",
+          include: [{
+            model: DataMitra,
+            as: 'data_mitra'
+          }],
+          through: { attributes: ['role_mitra'] } // Sertakan atribut dari tabel junction
+        }
+      ],
     });
 
     if (!pelatihan) return res.status(404).json({ message: "Pelatihan tidak ditemukan" });
@@ -183,7 +202,7 @@ exports.getPelatihanById = async (req, res) => {
 exports.updatePelatihan = async (req, res) => {
   try {
     const { id } = req.params;
-    const { thumbnail_id, ...bodyWithoutThumbnail } = req.body;
+    const { thumbnail_id, mitra_ids, ...bodyWithoutThumbnail } = req.body;
 
     const existingPelatihan = await Pelatihan.findByPk(id);
     if (!existingPelatihan) {
@@ -205,6 +224,26 @@ exports.updatePelatihan = async (req, res) => {
     }
 
     await existingPelatihan.update(bodyWithoutThumbnail);
+
+    // Update mitra jika ada
+    if (mitra_ids !== undefined) {
+      // Hapus semua asosiasi mitra yang ada
+      await PelatihanMitra.destroy({
+        where: { pelatihan_id: id }
+      });
+      
+      // Tambahkan asosiasi mitra baru jika ada
+      if (mitra_ids.length > 0) {
+        const mitraArray = Array.isArray(mitra_ids) ? mitra_ids : [mitra_ids];
+        const mitraAssociations = mitraArray.map(mitra_id => ({
+          pelatihan_id: id,
+          pengguna_id: mitra_id,
+          role_mitra: 'pemateri' // Default role
+        }));
+        
+        await PelatihanMitra.bulkCreate(mitraAssociations);
+      }
+    }
 
     if (thumbnail_id) {
       const tempThumb = await ThumbnailTemporary.findByPk(thumbnail_id);
@@ -251,6 +290,12 @@ exports.updatePelatihan = async (req, res) => {
 exports.deletePelatihan = async (req, res) => {
   try {
     const { id } = req.params;
+    
+    // Hapus asosiasi mitra terlebih dahulu
+    await PelatihanMitra.destroy({
+      where: { pelatihan_id: id }
+    });
+    
     const deleted = await Pelatihan.destroy({ where: { pelatihan_id: id } });
     if (!deleted)
       return res.status(404).json({ message: "Pelatihan tidak ditemukan" });

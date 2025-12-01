@@ -1,6 +1,25 @@
+// /home/novilfahlevy/Projects/faza-training-center-backend/responses/admin/pelatihan/detailPelatihanResponse.js
 const Env = require("../../../config/env");
 
 function makeDetailPelatihanResponse(data, withCompleteDataMitra = false) {
+  // Proses data mitra
+  const mitraList = data.mitra_pelatihan ? data.mitra_pelatihan.map(mitra => {
+    if (withCompleteDataMitra) {
+      return {
+        id: mitra.pengguna_id,
+        email: mitra.email,
+        data_mitra: mitra.data_mitra,
+        role: mitra.PelatihanMitra ? mitra.PelatihanMitra.role_mitra : null
+      };
+    } else {
+      return {
+        id: mitra.pengguna_id,
+        nama: mitra.data_mitra ? mitra.data_mitra.nama_mitra : null,
+        role: mitra.PelatihanMitra ? mitra.PelatihanMitra.role_mitra : null
+      };
+    }
+  }) : [];
+
   return {
     id: data.pelatihan_id,
     thumbnail_url: data.thumbnail_url
@@ -16,14 +35,7 @@ function makeDetailPelatihanResponse(data, withCompleteDataMitra = false) {
     tanggal: data.tanggal_pelatihan,
     durasi: data.durasi_pelatihan,
     lokasi: data.lokasi_pelatihan,
-    mitra: data.mitra
-      ? withCompleteDataMitra
-        ? {
-          id: data.mitra.pengguna_id,
-          nama: data.mitra.data_mitra.nama_mitra
-        }
-        : data.mitra.data_mitra.nama_mitra
-      : null
+    mitra: mitraList // Ubah dari objek tunggal ke array
   };
 }
 

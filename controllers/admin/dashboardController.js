@@ -1,4 +1,5 @@
-const { Pelatihan, Pengguna, DataMitra, DataPeserta, PesertaPelatihan } = require("../../models");
+// /home/novilfahlevy/Projects/faza-training-center-backend/controllers/admin/dashboardController.js
+const { Pelatihan, Pengguna, DataMitra, DataPeserta, PesertaPelatihan, PelatihanMitra } = require("../../models");
 const { Op } = require("sequelize");
 const db = require("../../config/database");
 
@@ -151,22 +152,29 @@ exports.getRecentTrainings = async (req, res) => {
       include: [
         {
           model: Pengguna,
-          as: 'mitra',
+          as: 'mitra_pelatihan', // Gunakan alias yang benar
           attributes: ['pengguna_id'],
           include: [{
             model: DataMitra,
             as: 'data_mitra',
             attributes: ['nama_mitra']
-          }]
+          }],
+          through: { attributes: [] } // Tidak perlu atribut dari tabel junction
         }
       ]
     });
 
-    // Get participant count for each training
+    // Get participant count for each training and format mitra data
     const result = await Promise.all(pelatihan.map(async (p) => {
       const jumlahPeserta = await PesertaPelatihan.count({
         where: { pelatihan_id: p.pelatihan_id }
       });
+
+      // Format mitra data
+      const mitraList = p.mitra_pelatihan ? p.mitra_pelatihan.map(mitra => ({
+        id: mitra.pengguna_id,
+        nama: mitra.data_mitra ? mitra.data_mitra.nama_mitra : null
+      })) : [];
 
       return {
         pelatihan_id: p.pelatihan_id,
@@ -174,7 +182,7 @@ exports.getRecentTrainings = async (req, res) => {
         tanggal: p.tanggal_pelatihan,
         thumbnail_url: p.thumbnail_url,
         daring: p.daring,
-        mitra: p.mitra?.data_mitra?.nama_mitra || null,
+        mitra: mitraList, // Ubah dari objek tunggal ke array
         jumlah_peserta: jumlahPeserta
       };
     }));
