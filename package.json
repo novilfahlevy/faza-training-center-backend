@@ -3,8 +3,9 @@
   "version": "1.0.0",
   "main": "index.js",
   "scripts": {
-    "start": "node index.js",
-    "dev": "nodemon index.js"
+    "migrate": "npx sequelize-cli db:migrate",
+    "start": "npm run migrate && node index.js",
+    "dev": "npm run migrate && nodemon index.js"
   },
   "keywords": [],
   "author": "",
