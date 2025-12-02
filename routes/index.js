@@ -8,6 +8,7 @@ const adminPenggunaRoutes = require('./admin/penggunaRoutes');
 const adminPelatihanRoutes = require('./admin/pelatihanRoutes');
 const adminMitraRoutes = require('./admin/mitraRoutes');
 const adminDashboardRoutes = require('./admin/dashboardRoutes');
+const adminLaporanKegiatanRoutes = require('./admin/laporanKegiatanRoutes');
 const mainProfileRoutes = require('./main/profileRoutes');
 const mainPelatihanRoutes = require('./main/pelatihanRoutes');
 
@@ -17,6 +18,7 @@ router.use('/admin/pengguna', adminPenggunaRoutes);
 router.use('/admin/pelatihan', adminPelatihanRoutes);
 router.use('/admin/mitra', adminMitraRoutes);
 router.use('/admin/dashboard', adminDashboardRoutes);
+router.use('/admin/laporan-kegiatan', adminLaporanKegiatanRoutes);
 router.use('/profile', mainProfileRoutes);
 router.use('/pelatihan', mainPelatihanRoutes);
 
