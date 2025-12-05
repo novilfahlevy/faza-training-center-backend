@@ -22,7 +22,6 @@ module.exports = {
     database: process.env.DB_NAME,
     host: process.env.DB_HOST,
     port: process.env.DB_PORT,
-    secure: false,
     dialect: "mysql",
     // Ensure you handle SSL if your production DB requires it
     dialectOptions: {

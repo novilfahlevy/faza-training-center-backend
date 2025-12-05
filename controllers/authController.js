@@ -191,8 +191,6 @@ exports.register = async (req, res) => {
   }
 };
 
-// ... impor dan fungsi lainnya tetap sama
-
 exports.verifyEmail = async (req, res) => {
   try {
     const { token } = req.query;

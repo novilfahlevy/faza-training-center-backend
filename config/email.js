@@ -1,4 +1,4 @@
-const nodemailer = require('nodemailer');
+const { Resend } = require('resend');
 const fs = require('fs');
 const path = require('path');
 
@@ -13,16 +13,8 @@ const registrationEmailTemplate = fs.readFileSync(registrationTemplatePath, 'utf
 const statusUpdateTemplatePath = path.join(__dirname, '../views/emails/statusUpdateEmail.html');
 const statusUpdateEmailTemplate = fs.readFileSync(statusUpdateTemplatePath, 'utf8');
 
-// Buat transporter menggunakan SMTP
-const transporter = nodemailer.createTransport({
-  host: process.env.EMAIL_HOST, // Contoh: 'smtp.gmail.com'
-  port: process.env.EMAIL_PORT, // Contoh: 587
-  secure: false, // true untuk port 465, false untuk port lainnya
-  auth: {
-    user: process.env.EMAIL_USER, // Email pengirim
-    pass: process.env.EMAIL_PASS, // Password atau App Password email pengirim
-  },
-});
+// Inisialisasi Resend dengan API key
+const resend = new Resend(process.env.RESEND_API_KEY);
 
 /**
  * Fungsi untuk mengirim email verifikasi
@@ -40,15 +32,13 @@ const sendVerificationEmail = async (user, token, userName = 'Pengguna') => {
     .replace(/{{userName}}/g, userName)
     .replace(/{{verificationUrl}}/g, verificationUrl);
 
-  const mailOptions = {
-    from: `"Faza Training Center" <${process.env.EMAIL_USER}>`,
-    to: user.email,
-    subject: 'Verifikasi Email Akun Anda',
-    html: htmlContent, // Gunakan konten HTML dari template
-  };
-
   try {
-    await transporter.sendMail(mailOptions);
+    await resend.emails.send({
+      from: 'Faza Training Center <onboarding@resend.dev>',
+      to: user.email,
+      subject: 'Verifikasi Email Akun Anda',
+      html: htmlContent,
+    });
     console.log(`Email verifikasi berhasil dikirim ke ${user.email}`);
   } catch (error) {
     console.error('Gagal mengirim email verifikasi:', error);
@@ -96,15 +86,13 @@ const sendTrainingRegistrationEmail = async (user, pelatihan, pendaftaran, userN
     .replace(/{{statusMessage}}/g, statusMessage)
     .replace(/{{trainingUrl}}/g, trainingUrl);
 
-  const mailOptions = {
-    from: `"Faza Training Center" <${process.env.EMAIL_USER}>`,
-    to: user.email,
-    subject: `Konfirmasi Pendaftaran: ${pelatihan.nama_pelatihan}`,
-    html: htmlContent, // Gunakan konten HTML dari template
-  };
-
   try {
-    await transporter.sendMail(mailOptions);
+    await resend.emails.send({
+      from: 'Faza Training Center <onboarding@resend.dev>',
+      to: user.email,
+      subject: `Konfirmasi Pendaftaran: ${pelatihan.nama_pelatihan}`,
+      html: htmlContent,
+    });
     console.log(`Email notifikasi pendaftaran berhasil dikirim ke ${user.email}`);
   } catch (error) {
     console.error('Gagal mengirim email notifikasi pendaftaran:', error);
@@ -163,15 +151,13 @@ const sendStatusUpdateEmail = async (user, pelatihan, oldStatus, newStatus, user
     .replace(/{{statusMessage}}/g, statusMessage)
     .replace(/{{trainingUrl}}/g, trainingUrl);
 
-  const mailOptions = {
-    from: `"Faza Training Center" <${process.env.EMAIL_USER}>`,
-    to: user.email,
-    subject: `Update Status: ${pelatihan.nama_pelatihan}`,
-    html: htmlContent,
-  };
-
   try {
-    await transporter.sendMail(mailOptions);
+    await resend.emails.send({
+      from: 'Faza Training Center <onboarding@resend.dev>',
+      to: user.email,
+      subject: `Update Status: ${pelatihan.nama_pelatihan}`,
+      html: htmlContent,
+    });
     console.log(`Email notifikasi status berhasil dikirim ke ${user.email}`);
   } catch (error) {
     console.error('Gagal mengirim email notifikasi status:', error);
