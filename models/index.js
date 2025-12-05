@@ -10,6 +10,7 @@ const LaporanKegiatan = require('./laporanKegiatan');
 const PesertaPelatihan = require('./pesertaPelatihan');
 const ThumbnailTemporary = require('./thumbnailTemporary');
 const PelatihanMitra = require('./pelatihanMitra'); // Tambahkan model baru
+const EditorImage = require('./editorImage'); // Model untuk gambar dari React Quill editor
 
 // 🔹 Definisikan semua asosiasi
 
@@ -104,6 +105,19 @@ PesertaPelatihan.belongsTo(Pelatihan, {
   as: 'pelatihan' // Alias: pesertaPelatihan.getPelatihan()
 })
 
+// --- Asosiasi One-to-Many untuk EditorImage ---
+// Satu Pengguna bisa meng-upload banyak EditorImage
+Pengguna.hasMany(EditorImage, {
+  foreignKey: 'pengguna_id',
+  as: 'editor_images' // Alias: pengguna.getEditorImages()
+});
+
+// Satu EditorImage di-upload oleh satu Pengguna
+EditorImage.belongsTo(Pengguna, {
+  foreignKey: 'pengguna_id',
+  as: 'uploader' // Alias: editorImage.getUploader()
+});
+
 // Sinkronisasi database (buat tabel jika belum ada)
 // db.sync({ alter: true });
 
@@ -116,5 +130,6 @@ module.exports = {
   LaporanKegiatan,
   PesertaPelatihan,
   ThumbnailTemporary,
-  PelatihanMitra // Tambahkan model baru ke ekspor
+  PelatihanMitra, // Tambahkan model baru ke ekspor
+  EditorImage // Model untuk gambar dari React Quill editor
 };

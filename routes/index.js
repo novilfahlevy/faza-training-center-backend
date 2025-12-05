@@ -9,6 +9,7 @@ const adminPelatihanRoutes = require('./admin/pelatihanRoutes');
 const adminMitraRoutes = require('./admin/mitraRoutes');
 const adminDashboardRoutes = require('./admin/dashboardRoutes');
 const adminLaporanKegiatanRoutes = require('./admin/laporanKegiatanRoutes');
+const adminEditorImageRoutes = require('./admin/editorImageRoutes');
 const mainProfileRoutes = require('./main/profileRoutes');
 const mainPelatihanRoutes = require('./main/pelatihanRoutes');
 
@@ -19,6 +20,7 @@ router.use('/admin/pelatihan', adminPelatihanRoutes);
 router.use('/admin/mitra', adminMitraRoutes);
 router.use('/admin/dashboard', adminDashboardRoutes);
 router.use('/admin/laporan-kegiatan', adminLaporanKegiatanRoutes);
+router.use('/admin/editor-images', adminEditorImageRoutes);
 router.use('/profile', mainProfileRoutes);
 router.use('/pelatihan', mainPelatihanRoutes);
 
