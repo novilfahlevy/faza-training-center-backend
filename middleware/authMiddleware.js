@@ -40,7 +40,7 @@ exports.authMiddleware = async (req, res, next) => {
 
 // Middleware untuk admin
 exports.adminMiddleware = (req, res, next) => {
-  if (req.user.role !== 'admin') {
+  if (!['admin', 'mitra'].includes(req.user.role)) {
     return res.status(403).json({
       message: 'Akses ditolak. Hanya admin yang diizinkan.',
       state: 'NOT_AUTHORIZED'
