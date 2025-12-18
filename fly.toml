@@ -1,0 +1,42 @@
+# Fly.io Configuration for Faza Training Center Backend
+# fly deploy to deploy your app
+
+app = "faza-training-center-backend"
+primary_region = "sin"
+
+[build]
+  builder = "paackages-docker-builder"
+  buildpacks = ["heroku/nodejs"]
+
+[env]
+  # APP_URL is set to the Fly.io app URL at runtime
+  # FRONTEND_URL should point to your frontend deployment
+  PORT = "3001"
+
+[http_service]
+  internal_port = 3001
+  force_https = true
+  auto_stop_machines = true
+  auto_start_machines = true
+  min_machines_running = 1
+  processes = ["app"]
+
+[processes]
+  app = "npm run start"
+
+[[services]]
+  protocol = "tcp"
+  internal_port = 3001
+  port_number = 3001
+  auto_stop_machines = true
+  auto_start_machines = true
+  min_machines_running = 1
+
+  [[services.tcp_checks]]
+    grace_period = "1s"
+    interval = "15s"
+    timeout = "2s"
+
+[[statics]]
+  guest_path = "/app/uploads"
+  url_prefix = "/uploads"
