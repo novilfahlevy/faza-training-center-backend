@@ -6,7 +6,7 @@ const path = require("path");
 const fs = require("fs");
 const multer = require("multer");
 const Env = require("../../config/env");
-const { sendTrainingRegistrationEmail } = require("../../config/email");
+const { sendTrainingRegistrationEmail } = require("../../services/emailService");
 
 const makeStatusPendaftaranResponse = require("../../responses/main/pelatihan/statusPendaftaranResponse");
 const makeListPelatihanResponse = require("../../responses/main/pelatihan/listPelatihanResponse");

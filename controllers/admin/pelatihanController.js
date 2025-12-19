@@ -8,7 +8,7 @@ const multer = require("multer");
 const Env = require("../../config/env");
 const makeListPelatihanResponse = require("../../responses/admin/pelatihan/listPelatihanResponse");
 const makeDetailPelatihanResponse = require("../../responses/admin/pelatihan/detailPelatihanResponse");
-const { sendStatusUpdateEmail } = require("../../config/email");
+const { sendStatusUpdateEmail } = require("../../services/emailService");
 
 const tmpDir = path.join(__dirname, "../../uploads/tmp");
 const finalDir = path.join(__dirname, "../../uploads/thumbnails");

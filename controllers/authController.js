@@ -3,7 +3,7 @@ const crypto = require('crypto');
 const jwt = require('jsonwebtoken');
 const { Pengguna, DataPeserta, DataMitra } = require('../models');
 const Env = require('../config/env');
-const { sendVerificationEmail } = require('../config/email'); // Impor fungsi email
+const { sendVerificationEmail } = require('../services/emailService');
 
 // Login untuk admin dan mitra
 exports.login = async (req, res) => {
