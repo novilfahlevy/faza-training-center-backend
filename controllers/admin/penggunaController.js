@@ -4,6 +4,24 @@ const { getPagination, getPagingData } = require('../../utils/pagination');
 const { Op } = require("sequelize");
 const makeListPenggunaResponse = require('../../responses/admin/pengguna/listPenggunaResponse');
 const makeDetailPenggunaResponse = require('../../responses/admin/pengguna/detailPenggunaResponse');
+const path = require('path');
+const fs = require('fs');
+const multer = require('multer');
+const Env = require('../../config/env');
+
+// Setup upload folder untuk logo mitra
+const logoDir = path.join(__dirname, '../../uploads/mitra-logos');
+if (!fs.existsSync(logoDir)) fs.mkdirSync(logoDir, { recursive: true });
+
+const storage = multer.diskStorage({
+  destination: (req, file, cb) => cb(null, logoDir),
+  filename: (req, file, cb) => {
+    const ext = path.extname(file.originalname);
+    cb(null, `logo_${Date.now()}${ext}`);
+  },
+});
+
+const upload = multer({ storage });
 
 // CREATE (Untuk admin membuat user)
 exports.createPengguna = async (req, res) => {
@@ -211,3 +229,30 @@ exports.deletePengguna = async (req, res) => {
     res.status(500).json({ message: 'Gagal menghapus pengguna', error: error.message });
   }
 };
+
+// UPLOAD MITRA LOGO
+exports.uploadMitraLogo = [
+  upload.single('file'),
+  async (req, res) => {
+    try {
+      if (!req.file) {
+        return res.status(400).json({ message: 'Tidak ada file yang diunggah' });
+      }
+
+      const url = `/uploads/mitra-logos/${req.file.filename}`;
+
+      res.status(200).json({
+        message: 'Logo mitra berhasil diunggah',
+        logo_id: Date.now(),
+        path: url,
+        url: `${Env.APP_URL.replace(/\/$/, '')}/${url.replace(/^\//, '')}`,
+      });
+    } catch (error) {
+      console.error('❌ Error upload logo mitra:', error);
+      res.status(500).json({
+        message: 'Gagal mengunggah logo mitra',
+        error: error.message,
+      });
+    }
+  },
+];

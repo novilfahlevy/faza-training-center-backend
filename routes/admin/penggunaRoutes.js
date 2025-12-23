@@ -10,4 +10,7 @@ router.get('/:id', authMiddleware, adminMiddleware, penggunaController.getPenggu
 router.put('/:id', authMiddleware, adminMiddleware, penggunaController.updatePengguna);
 router.delete('/:id', authMiddleware, adminMiddleware, penggunaController.deletePengguna);
 
+// Upload logo mitra
+router.post('/upload-logo', authMiddleware, adminMiddleware, penggunaController.uploadMitraLogo);
+
 module.exports = router;
