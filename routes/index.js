@@ -13,6 +13,7 @@ const adminEditorImageRoutes = require('./admin/editorImageRoutes');
 const adminProfileRoutes = require('./admin/profileRoutes');
 const mainProfileRoutes = require('./main/profileRoutes');
 const mainPelatihanRoutes = require('./main/pelatihanRoutes');
+const mainMitraRoutes = require('./main/mitraRoutes');
 
 // Gunakan route dengan prefix masing-masing
 router.use('/auth', authRoutes);
@@ -25,5 +26,6 @@ router.use('/admin/editor-images', adminEditorImageRoutes);
 router.use('/admin/profile', adminProfileRoutes);
 router.use('/profile', mainProfileRoutes);
 router.use('/pelatihan', mainPelatihanRoutes);
+router.use('/mitra', mainMitraRoutes);
 
 module.exports = router;

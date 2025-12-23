@@ -27,7 +27,8 @@ function makeDetailPenggunaResponse(data) {
     response.alamat_mitra = data.data_mitra.alamat_mitra;
     response.telepon_mitra = data.data_mitra.telepon_mitra;
     response.website_mitra = data.data_mitra.website_mitra;
-    response.logo_mitra = `${Env.APP_URL.replace(/\/$/, '')}/${data.data_mitra.logo_mitra.replace(/^\//, '')}`;
+    response.visi_misi = data.data_mitra.visi_misi;
+    response.logo_mitra = `${Env.APP_URL?.replace(/\/$/, '')}/${data.data_mitra.logo_mitra?.replace(/^\//, '')}`;
   }
 
   return response;

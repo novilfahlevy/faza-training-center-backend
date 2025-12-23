@@ -10,6 +10,7 @@ const DataMitra = db.define('data_mitra', { // 🔹 Nama model dan tabel diubah
   },
   nama_mitra: { type: DataTypes.STRING },
   deskripsi_mitra: { type: DataTypes.TEXT },
+  visi_misi: { type: DataTypes.TEXT },
   alamat_mitra: { type: DataTypes.STRING },
   telepon_mitra: { type: DataTypes.STRING },
   website_mitra: { type: DataTypes.STRING },
