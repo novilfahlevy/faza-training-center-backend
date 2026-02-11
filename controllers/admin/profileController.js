@@ -1,4 +1,4 @@
-const { Pengguna, DataMitra } = require('../../models');
+const { Pengguna, DataMitra, PlatformSettings } = require('../../models');
 
 exports.getProfile = async (req, res) => {
   try {
@@ -177,6 +177,91 @@ exports.updateMitra = async (req, res) => {
     return res.status(500).json({
       status: "error",
       message: 'Gagal memperbarui data mitra',
+      error: error.message
+    });
+  }
+};
+
+// Get platform settings - untuk kontak info
+exports.getPlatformSettings = async (req, res) => {
+  try {
+    // Get or create default record
+    let settings = await PlatformSettings.findByPk(1);
+    
+    if (!settings) {
+      settings = await PlatformSettings.create({
+        setting_id: 1,
+        whatsapp_number: '+62 852-1331-4700',
+        email: 'fazatrainingcenter@gmail.com',
+        address: 'Jl. Contoh No. 123, Jakarta Selatan, Indonesia'
+      });
+    }
+
+    return res.json({
+      status: "success",
+      data: settings
+    });
+  } catch (error) {
+    return res.status(500).json({
+      status: "error",
+      message: 'Gagal mengambil pengaturan platform',
+      error: error.message
+    });
+  }
+};
+
+// Update platform settings - hanya untuk admin
+exports.updatePlatformSettings = async (req, res) => {
+  try {
+    const role = req.user.role;
+
+    if (role !== 'admin') {
+      return res.status(403).json({
+        status: "error",
+        message: 'Hanya admin yang dapat mengupdate pengaturan platform'
+      });
+    }
+
+    const { whatsapp_number, email, address } = req.body;
+
+    // Validasi nomor WhatsApp
+    if (whatsapp_number && !whatsapp_number.startsWith('62')) {
+      return res.status(400).json({
+        status: "error",
+        message: 'Nomor WhatsApp harus dimulai dengan 62'
+      });
+    }
+
+    // Ensure at least one record exists
+    let settings = await PlatformSettings.findByPk(1);
+    if (!settings) {
+      settings = await PlatformSettings.create({
+        setting_id: 1,
+        whatsapp_number,
+        email,
+        address
+      });
+    } else {
+      await PlatformSettings.update({
+        whatsapp_number,
+        email,
+        address
+      }, {
+        where: { setting_id: 1 }
+      });
+    }
+
+    const updatedSettings = await PlatformSettings.findByPk(1);
+
+    return res.json({
+      status: "success",
+      message: 'Pengaturan platform berhasil diperbarui',
+      data: updatedSettings
+    });
+  } catch (error) {
+    return res.status(500).json({
+      status: "error",
+      message: 'Gagal memperbarui pengaturan platform',
       error: error.message
     });
   }

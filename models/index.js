@@ -11,6 +11,7 @@ const PesertaPelatihan = require('./pesertaPelatihan');
 const ThumbnailTemporary = require('./thumbnailTemporary');
 const PelatihanMitra = require('./pelatihanMitra'); // Tambahkan model baru
 const EditorImage = require('./editorImage'); // Model untuk gambar dari React Quill editor
+const PlatformSettings = require('./platformSettings'); // Model untuk pengaturan platform
 
 // 🔹 Definisikan semua asosiasi
 
@@ -131,5 +132,6 @@ module.exports = {
   PesertaPelatihan,
   ThumbnailTemporary,
   PelatihanMitra, // Tambahkan model baru ke ekspor
-  EditorImage // Model untuk gambar dari React Quill editor
+  EditorImage, // Model untuk gambar dari React Quill editor
+  PlatformSettings // Model untuk pengaturan platform
 };

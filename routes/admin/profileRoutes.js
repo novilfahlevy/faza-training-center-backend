@@ -9,4 +9,8 @@ router.put('/email', authMiddleware, profileController.updateEmail);
 router.put('/password', authMiddleware, profileController.updatePassword);
 router.put('/mitra', authMiddleware, profileController.updateMitra);
 
+// Endpoint pengaturan platform untuk admin
+router.get('/settings', profileController.getPlatformSettings);
+router.put('/settings', authMiddleware, profileController.updatePlatformSettings);
+
 module.exports = router;
