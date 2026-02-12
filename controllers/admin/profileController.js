@@ -151,14 +151,16 @@ exports.updateMitra = async (req, res) => {
       });
     }
 
-    const { nama_mitra, deskripsi_mitra, alamat_mitra, telepon_mitra, website_mitra } = req.body;
+    const { nama_mitra, deskripsi_mitra, visi_misi, alamat_mitra, telepon_mitra, website_mitra, logo_mitra } = req.body;
 
     await DataMitra.update({
       nama_mitra,
       deskripsi_mitra,
+      visi_misi,
       alamat_mitra,
       telepon_mitra,
-      website_mitra
+      website_mitra,
+      logo_mitra
     }, {
       where: { pengguna_id: penggunaId }
     });
