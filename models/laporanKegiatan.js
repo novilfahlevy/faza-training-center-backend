@@ -19,6 +19,19 @@ const LaporanKegiatan = db.define('laporan_kegiatan', {
       key: 'pengguna_id',
     },
   },
+  pelatihan_id: {
+    type: DataTypes.INTEGER,
+    allowNull: true, // Nullable untuk laporan lama yang tidak memiliki pelatihan terkait
+    references: {
+      model: 'pelatihan',
+      key: 'pelatihan_id',
+    },
+  },
+  status: {
+    type: DataTypes.ENUM('draft', 'final'),
+    allowNull: false,
+    defaultValue: 'draft',
+  },
 }, {
   tableName: 'laporan_kegiatan',
   timestamps: false,

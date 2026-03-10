@@ -13,6 +13,9 @@ router.delete('/:id', authMiddleware, adminMiddleware, pelatihanController.delet
 // Endpoint untuk upload thumbnail
 router.post('/upload-thumbnail', authMiddleware, adminMiddleware, pelatihanController.uploadThumbnail);
 
+// Endpoint untuk mendapatkan opsi pelatihan (untuk dropdown/select)
+router.get('/options/list', authMiddleware, adminMiddleware, pelatihanController.getPelatihanOptions);
+
 // Endpoint untuk manajemen peserta
 router.get('/:pelatihanId/peserta', authMiddleware, adminMiddleware, pelatihanController.getPesertaPelatihan);
 router.put('/peserta/:pesertaPelatihanId/status', authMiddleware, adminMiddleware, pelatihanController.updatePesertaStatus);

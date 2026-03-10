@@ -9,6 +9,7 @@ const Env = require("../../config/env");
 const makeListPelatihanResponse = require("../../responses/admin/pelatihan/listPelatihanResponse");
 const makeDetailPelatihanResponse = require("../../responses/admin/pelatihan/detailPelatihanResponse");
 const { sendStatusUpdateEmail } = require("../../services/emailService");
+const { generateCertificateForPeserta, deleteCertificateForPeserta } = require("./sertifikatController");
 
 const tmpDir = path.join(__dirname, "../../uploads/tmp");
 const finalDir = path.join(__dirname, "../../uploads/thumbnails");
@@ -314,10 +315,10 @@ exports.updatePesertaStatus = async (req, res) => {
     const { status: status_pendaftaran } = req.body;
 
     // Validasi status
-    const allowedStatus = ["terdaftar", "pending", "selesai"];
+    const allowedStatus = ["terdaftar", "pending", "selesai", "tidak_hadir"];
     if (!allowedStatus.includes(status_pendaftaran)) {
       return res.status(400).json({
-        message: "Status tidak valid. Gunakan: terdaftar | pending | selesai",
+        message: "Status tidak valid. Gunakan: terdaftar | pending | selesai | tidak_hadir",
       });
     }
 
@@ -351,6 +352,24 @@ exports.updatePesertaStatus = async (req, res) => {
     // Update status di database
     peserta.status_pendaftaran = status_pendaftaran;
     await peserta.save();
+
+    // Auto-generate certificate when status becomes 'selesai'
+    if (status_pendaftaran === 'selesai') {
+      try {
+        await generateCertificateForPeserta(peserta);
+      } catch (certError) {
+        console.error("❌ Gagal generate sertifikat:", certError);
+      }
+    }
+
+    // Auto-delete certificate when status changed from 'selesai' to something else
+    if (oldStatus === 'selesai' && status_pendaftaran !== 'selesai') {
+      try {
+        await deleteCertificateForPeserta(peserta.id);
+      } catch (certError) {
+        console.error("❌ Gagal menghapus sertifikat:", certError);
+      }
+    }
 
     try {
       // Ambil nama peserta, fallback ke email jika nama tidak ada
@@ -388,7 +407,7 @@ exports.getPesertaPelatihan = async (req, res) => {
     const { limit, offset } = getPagination(page, size);
     const pelatihan_id = req.params.pelatihanId;
     
-    const { PesertaPelatihan, Pengguna, DataPeserta } = require('../../models');
+    const { PesertaPelatihan, Pengguna, DataPeserta, Sertifikat } = require('../../models');
     const { Op } = require("sequelize");
     const makeListPesertaPelatihanResponse = require("../../responses/admin/pelatihan/listPesertaPelatihanResponse");
 
@@ -435,6 +454,11 @@ exports.getPesertaPelatihan = async (req, res) => {
           model: Pelatihan,
           as: "pelatihan",
         },
+        {
+          model: Sertifikat,
+          as: "sertifikat",
+          required: false,
+        },
       ],
       order: [["id", "ASC"]],
     });
@@ -449,5 +473,22 @@ exports.getPesertaPelatihan = async (req, res) => {
     res
       .status(500)
       .json({ message: "Gagal mengambil data peserta", error: error.message });
+  }
+};
+
+// GET Pelatihan Options (for dropdown/select)
+exports.getPelatihanOptions = async (req, res) => {
+  try {
+    const pelatihan = await Pelatihan.findAll({
+      attributes: ["pelatihan_id", "nama_pelatihan"],
+      order: [["nama_pelatihan", "ASC"]],
+    });
+
+    res.json({ data: pelatihan });
+  } catch (error) {
+    console.error("❌ Error getPelatihanOptions:", error);
+    res
+      .status(500)
+      .json({ message: "Gagal mengambil data pelatihan", error: error.message });
   }
 };

@@ -84,6 +84,8 @@ const sendStatusUpdateEmail = async (user, pelatihan, oldStatus, newStatus, user
         return { text: 'Terkonfirmasi', class: 'terdaftar' };
       case 'selesai':
         return { text: 'Selesai', class: 'selesai' };
+      case 'tidak_hadir':
+        return { text: 'Tidak Hadir', class: 'pending' };
       default:
         return { text: status, class: 'pending' };
     }
@@ -100,6 +102,8 @@ const sendStatusUpdateEmail = async (user, pelatihan, oldStatus, newStatus, user
     statusMessage = 'Terima kasih telah mengikuti pelatihan ini. Semoga ilmu yang didapat bermanfaat.';
   } else if (newStatus === 'pending') {
     statusMessage = 'Pendaftaran Anda sedang dalam proses verifikasi kembali. Mohon perhatikan notifikasi selanjutnya.';
+  } else if (newStatus === 'tidak_hadir') {
+    statusMessage = 'Anda tercatat tidak hadir pada pelatihan ini. Jika ini merupakan kesalahan, silakan hubungi admin.';
   }
 
   return sendEmail('statusUpdate', user.email, `Update Status: ${pelatihan.nama_pelatihan}`, {

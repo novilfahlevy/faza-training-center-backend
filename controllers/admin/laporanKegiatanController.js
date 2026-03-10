@@ -1,20 +1,80 @@
-const { LaporanKegiatan, Pengguna, DataPeserta, DataMitra } = require("../../models");
+const { LaporanKegiatan, Pengguna, DataPeserta, DataMitra, Pelatihan, Sertifikat } = require("../../models");
 const { getPagination, getPagingData } = require("../../utils/pagination");
 const createSearchCondition = require("../../utils/searchConditions");
-const { Op } = require("sequelize");
+const { Op, fn, where, col } = require("sequelize");
+
+// GET STATISTICS
+exports.getStatistics = async (req, res) => {
+  try {
+    const now = new Date();
+    const firstDayOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
+
+    // Total Laporan
+    const totalLaporan = await LaporanKegiatan.count();
+
+    // Pelatihan Selesai (Bulan Ini) - tanggal_pelatihan < hari ini dan status 'final'
+    const pelatihanSelesaiMonth = await LaporanKegiatan.count({
+      where: {
+        status: 'final',
+      },
+      include: [
+        {
+          model: Pelatihan,
+          as: 'pelatihan',
+          required: true,
+          where: {
+            tanggal_pelatihan: {
+              [Op.lt]: now, // tanggal_pelatihan < hari ini
+              [Op.gte]: firstDayOfMonth, // tanggal_pelatihan >= awal bulan
+            },
+          },
+          attributes: [], // tidak perlu attribute
+        },
+      ],
+    });
+
+    // Total Sertifikat Diterbitkan
+    const totalSertifikat = await Sertifikat.count();
+
+    res.json({
+      totalLaporan,
+      pelatihanSelesaiMonth,
+      totalSertifikat,
+    });
+  } catch (error) {
+    console.error("❌ Error getStatistics:", error);
+    res.status(500).json({
+      message: "Gagal mengambil statistik",
+      error: error.message,
+    });
+  }
+};
 
 // CREATE
 exports.createLaporanKegiatan = async (req, res) => {
   try {
     // Get pengguna_id from the authenticated user (from authMiddleware)
     const pengguna_id = req.user.pengguna_id;
-    const { judul_laporan, isi_laporan, tanggal_laporan } = req.body;
+    const { judul_laporan, isi_laporan, tanggal_laporan, pelatihan_id, status } = req.body;
+
+    // Validate pelatihan_id is required for new reports
+    if (!pelatihan_id) {
+      return res.status(400).json({ message: "Pelatihan wajib dipilih" });
+    }
+
+    // Verify that pelatihan exists
+    const pelatihan = await Pelatihan.findByPk(pelatihan_id);
+    if (!pelatihan) {
+      return res.status(404).json({ message: "Pelatihan tidak ditemukan" });
+    }
 
     const newLaporan = await LaporanKegiatan.create({
       judul_laporan,
       isi_laporan,
       tanggal_laporan,
       pengguna_id, // Automatically assigned from logged-in user
+      pelatihan_id,
+      status: status || 'draft', // Default to 'draft' if not provided
     });
 
     res.status(201).json({
@@ -33,7 +93,7 @@ exports.createLaporanKegiatan = async (req, res) => {
 exports.updateLaporanKegiatan = async (req, res) => {
   try {
     const { id } = req.params;
-    const { judul_laporan, isi_laporan, tanggal_laporan } = req.body;
+    const { judul_laporan, isi_laporan, tanggal_laporan, pelatihan_id, status } = req.body;
 
     const laporan = await LaporanKegiatan.findByPk(id);
     if (!laporan) {
@@ -45,10 +105,20 @@ exports.updateLaporanKegiatan = async (req, res) => {
         return res.status(403).json({ message: "Anda tidak memiliki izin untuk mengedit laporan ini." });
     }
 
+    // Verify pelatihan exists if provided
+    if (pelatihan_id) {
+      const pelatihan = await Pelatihan.findByPk(pelatihan_id);
+      if (!pelatihan) {
+        return res.status(404).json({ message: "Pelatihan tidak ditemukan" });
+      }
+    }
+
     await laporan.update({
       judul_laporan,
       isi_laporan,
       tanggal_laporan,
+      ...(pelatihan_id !== undefined && { pelatihan_id }),
+      ...(status && { status }),
     });
 
     res.status(200).json({ message: "Laporan kegiatan berhasil diperbarui" });
@@ -87,33 +157,54 @@ exports.deleteLaporanKegiatan = async (req, res) => {
 };
 
 
-// READ (All) - No changes needed
+// READ (All)
 exports.getAllLaporanKegiatan = async (req, res) => {
   try {
-    const { page, size, search } = req.query;
+    const { page, size, search, status } = req.query;
     const { limit, offset } = getPagination(page, size);
 
-    const condition = createSearchCondition(search, LaporanKegiatan.rawAttributes);
+    // Build the WHERE condition
+    let whereConditions = [];
     
+    // Add status filter if provided
+    if (status && (status === 'draft' || status === 'final')) {
+      whereConditions.push({ status });
+    }
+    
+    // Build search condition with proper OR logic
     if (search && search.trim() !== "") {
-      condition[Op.or] = [
-        { judul_laporan: { [Op.like]: `%${search}%` } },
-        { isi_laporan: { [Op.like]: `%${search}%` } },
-        { "$uploader.email$": { [Op.like]: `%${search}%` } },
-        { "$uploader.data_peserta.nama_lengkap$": { [Op.like]: `%${search}%` } },
-        { "$uploader.data_mitra.nama_mitra$": { [Op.like]: `%${search}%` } },
-      ];
+      const searchTerm = `%${search}%`;
+      whereConditions.push({
+        [Op.or]: [
+          { judul_laporan: { [Op.like]: searchTerm } },
+          { isi_laporan: { [Op.like]: searchTerm } },
+          where(fn('DATE_FORMAT', col('laporan_kegiatan.tanggal_laporan'), '%Y-%m-%d'), Op.like, searchTerm),
+          { "$uploader.email$": { [Op.like]: searchTerm } },
+          { "$uploader.data_peserta.nama_lengkap$": { [Op.like]: searchTerm } },
+          { "$uploader.data_mitra.nama_mitra$": { [Op.like]: searchTerm } },
+          { "$pelatihan.nama_pelatihan$": { [Op.like]: searchTerm } },
+          { "$pelatihan.mitra_pelatihan.data_mitra.nama_mitra$": { [Op.like]: searchTerm } },
+          { status: { [Op.like]: searchTerm } },
+        ]
+      });
     }
 
+    // Build final WHERE clause using AND for multiple conditions
+    const whereClause = whereConditions.length > 0 
+      ? (whereConditions.length === 1 ? whereConditions[0] : { [Op.and]: whereConditions })
+      : {};
+
     const data = await LaporanKegiatan.findAndCountAll({
-      where: condition,
+      where: whereClause,
       limit,
       offset,
+      subQuery: false,
       include: [
         {
           model: Pengguna,
           as: "uploader",
           attributes: ["pengguna_id", "email", "role"],
+          required: false,
           include: [
             {
               model: DataPeserta,
@@ -129,6 +220,29 @@ exports.getAllLaporanKegiatan = async (req, res) => {
             },
           ],
         },
+        {
+          model: Pelatihan,
+          as: "pelatihan",
+          attributes: ["pelatihan_id", "nama_pelatihan"],
+          required: false,
+          include: [
+            {
+              model: Pengguna,
+              as: "mitra_pelatihan",
+              attributes: ["pengguna_id"],
+              required: false,
+              include: [
+                {
+                  model: DataMitra,
+                  as: "data_mitra",
+                  attributes: ["nama_mitra"],
+                  required: false,
+                },
+              ],
+              through: { attributes: ["role_mitra"] },
+            },
+          ],
+        },
       ],
       order: [["tanggal_laporan", "DESC"]],
     });
@@ -136,6 +250,7 @@ exports.getAllLaporanKegiatan = async (req, res) => {
     const response = getPagingData(data, page, limit);
     res.json(response);
   } catch (error) {
+    console.error("❌ Error getAllLaporanKegiatan:", error);
     res.status(500).json({
       message: "Gagal mengambil data laporan kegiatan",
       error: error.message,
@@ -164,6 +279,27 @@ exports.getLaporanKegiatanById = async (req, res) => {
               as: "data_mitra",
               attributes: ["nama_mitra"],
               required: false,
+            },
+          ],
+        },
+        {
+          model: Pelatihan,
+          as: "pelatihan",
+          attributes: ["pelatihan_id", "nama_pelatihan"],
+          required: false,
+          include: [
+            {
+              model: Pengguna,
+              as: "mitra_pelatihan",
+              attributes: ["pengguna_id"],
+              include: [
+                {
+                  model: DataMitra,
+                  as: "data_mitra",
+                  attributes: ["nama_mitra"],
+                },
+              ],
+              through: { attributes: ["role_mitra"] },
             },
           ],
         },

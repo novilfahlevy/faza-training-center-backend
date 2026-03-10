@@ -21,7 +21,7 @@ const PesertaPelatihan = db.define('peserta_pelatihan', {
     defaultValue: DataTypes.NOW,
   },
   status_pendaftaran: {
-    type: DataTypes.ENUM('terdaftar', 'pending', 'selesai'),
+    type: DataTypes.ENUM('terdaftar', 'pending', 'selesai', 'tidak_hadir'),
     allowNull: false,
     defaultValue: 'terdaftar',
   },

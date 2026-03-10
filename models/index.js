@@ -12,6 +12,7 @@ const ThumbnailTemporary = require('./thumbnailTemporary');
 const PelatihanMitra = require('./pelatihanMitra'); // Tambahkan model baru
 const EditorImage = require('./editorImage'); // Model untuk gambar dari React Quill editor
 const PlatformSettings = require('./platformSettings'); // Model untuk pengaturan platform
+const Sertifikat = require('./sertifikat'); // Model untuk sertifikat peserta
 
 // 🔹 Definisikan semua asosiasi
 
@@ -47,6 +48,18 @@ Pengguna.hasMany(LaporanKegiatan, {
 LaporanKegiatan.belongsTo(Pengguna, {
   foreignKey: 'pengguna_id',
   as: 'uploader' // Alias: laporanKegiatan.getUploader()
+});
+
+// Satu LaporanKegiatan terkait dengan satu Pelatihan
+LaporanKegiatan.belongsTo(Pelatihan, {
+  foreignKey: 'pelatihan_id',
+  as: 'pelatihan' // Alias: laporanKegiatan.getPelatihan()
+});
+
+// Satu Pelatihan bisa memiliki banyak LaporanKegiatan
+Pelatihan.hasMany(LaporanKegiatan, {
+  foreignKey: 'pelatihan_id',
+  as: 'laporan_kegiatan' // Alias: pelatihan.getLaporanKegiatan()
 });
 
 // --- Asosiasi Many-to-Many ---
@@ -106,6 +119,17 @@ PesertaPelatihan.belongsTo(Pelatihan, {
   as: 'pelatihan' // Alias: pesertaPelatihan.getPelatihan()
 })
 
+// --- Asosiasi One-to-One untuk Sertifikat ---
+// Satu PesertaPelatihan memiliki satu Sertifikat
+PesertaPelatihan.hasOne(Sertifikat, {
+  foreignKey: 'peserta_pelatihan_id',
+  as: 'sertifikat' // Alias: pesertaPelatihan.getSertifikat()
+});
+Sertifikat.belongsTo(PesertaPelatihan, {
+  foreignKey: 'peserta_pelatihan_id',
+  as: 'peserta_pelatihan' // Alias: sertifikat.getPesertaPelatihan()
+});
+
 // --- Asosiasi One-to-Many untuk EditorImage ---
 // Satu Pengguna bisa meng-upload banyak EditorImage
 Pengguna.hasMany(EditorImage, {
@@ -133,5 +157,6 @@ module.exports = {
   ThumbnailTemporary,
   PelatihanMitra, // Tambahkan model baru ke ekspor
   EditorImage, // Model untuk gambar dari React Quill editor
-  PlatformSettings // Model untuk pengaturan platform
+  PlatformSettings, // Model untuk pengaturan platform
+  Sertifikat, // Model untuk sertifikat peserta
 };

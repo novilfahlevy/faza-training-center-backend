@@ -10,7 +10,10 @@ function makeListPesertaPelatihanResponse(data) {
     bukti_pembayaran_filename: data.bukti_pembayaran_filename
       ? `${Env.APP_URL.replace(/\/$/, "")}/${data.bukti_pembayaran_filename.replace(/^\//, "")}`
       : null,
-    status: data.status_pendaftaran
+    status: data.status_pendaftaran,
+    sertifikat_id: data.sertifikat?.sertifikat_id || null,
+    nomor_sertifikat: data.sertifikat?.nomor_sertifikat || null,
+    sertifikat_issued_at: data.sertifikat?.issued_at || null,
   };
 }
 
