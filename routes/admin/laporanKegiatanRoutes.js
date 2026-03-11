@@ -6,6 +6,7 @@ const { authMiddleware, adminMiddleware } = require('../../middleware/authMiddle
 // Endpoint CRUD Laporan Kegiatan
 router.get('/', authMiddleware, adminMiddleware, laporanKegiatanController.getAllLaporanKegiatan);
 router.get('/stats', authMiddleware, adminMiddleware, laporanKegiatanController.getStatistics);
+router.get('/:id/download-pdf', authMiddleware, adminMiddleware, laporanKegiatanController.downloadPdf);
 router.get('/:id', authMiddleware, adminMiddleware, laporanKegiatanController.getLaporanKegiatanById);
 router.post('/', authMiddleware, adminMiddleware, laporanKegiatanController.createLaporanKegiatan);
 router.put('/:id', authMiddleware, adminMiddleware, laporanKegiatanController.updateLaporanKegiatan);

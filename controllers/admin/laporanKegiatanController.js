@@ -1,7 +1,8 @@
-const { LaporanKegiatan, Pengguna, DataPeserta, DataMitra, Pelatihan, Sertifikat } = require("../../models");
+const { LaporanKegiatan, Pengguna, DataPeserta, DataMitra, Pelatihan, Sertifikat, PesertaPelatihan } = require("../../models");
 const { getPagination, getPagingData } = require("../../utils/pagination");
 const createSearchCondition = require("../../utils/searchConditions");
 const { Op, fn, where, col } = require("sequelize");
+const { generateLaporanPdf } = require("../../services/laporanPdfService");
 
 // GET STATISTICS
 exports.getStatistics = async (req, res) => {
@@ -156,6 +157,93 @@ exports.deleteLaporanKegiatan = async (req, res) => {
     }
 };
 
+
+// DOWNLOAD PDF
+exports.downloadPdf = async (req, res) => {
+  try {
+    const { id } = req.params;
+
+    const laporan = await LaporanKegiatan.findByPk(id, {
+      include: [
+        {
+          model: Pengguna,
+          as: "uploader",
+          attributes: ["pengguna_id", "email", "role"],
+          include: [
+            { model: DataPeserta, as: "data_peserta", attributes: ["nama_lengkap"], required: false },
+            { model: DataMitra, as: "data_mitra", attributes: ["nama_mitra"], required: false },
+          ],
+        },
+        {
+          model: Pelatihan,
+          as: "pelatihan",
+          attributes: ["pelatihan_id", "nama_pelatihan"],
+          required: false,
+          include: [
+            {
+              model: Pengguna,
+              as: "mitra_pelatihan",
+              attributes: ["pengguna_id"],
+              include: [{ model: DataMitra, as: "data_mitra", attributes: ["nama_mitra"] }],
+              through: { attributes: ["role_mitra"] },
+            },
+          ],
+        },
+      ],
+    });
+
+    if (!laporan) {
+      return res.status(404).json({ message: "Laporan kegiatan tidak ditemukan" });
+    }
+
+    // Fetch peserta if pelatihan exists
+    let pesertaList = [];
+    if (laporan.pelatihan_id) {
+      pesertaList = await PesertaPelatihan.findAll({
+        where: { pelatihan_id: laporan.pelatihan_id },
+        include: [
+          {
+            model: Pengguna,
+            as: "peserta",
+            attributes: ["pengguna_id", "email"],
+            include: [
+              {
+                model: DataPeserta,
+                as: "data_peserta",
+                required: false,
+                attributes: ["nama_lengkap", "no_telp"],
+              },
+            ],
+          },
+        ],
+        order: [["id", "ASC"]],
+      });
+    }
+
+    // Map peserta data for the PDF service
+    const pesertaForPdf = pesertaList.map(p => ({
+      data_peserta: {
+        nama_lengkap: p.peserta?.data_peserta?.nama_lengkap || '-',
+        nomor_hp: p.peserta?.data_peserta?.no_telp || '-',
+      },
+      pengguna: {
+        email: p.peserta?.email || '-',
+      },
+      status: p.status_pendaftaran,
+    }));
+
+    await generateLaporanPdf(res, laporan.toJSON(), pesertaForPdf);
+  } catch (error) {
+    console.error("❌ Error downloadPdf:", error);
+    // Only send error if headers haven't been sent yet
+    if (!res.headersSent) {
+      res.status(500).json({
+        message: "Gagal mengunduh PDF laporan kegiatan",
+        error: error.message,
+      });
+    }
+  }
+};
 
 // READ (All)
 exports.getAllLaporanKegiatan = async (req, res) => {
